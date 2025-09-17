@@ -1,5 +1,9 @@
 # rclap
 
+![Rust](https://img.shields.io/badge/rust-stable-brightgreen.svg)
+[![Version](https://img.shields.io/crates/v/rclap.svg)](https://crates.io/crates/rclap)
+[![Docs.rs](https://docs.rs/rclap/badge.svg)](https://docs.rs/rclap)
+
 > rclap is a configuration helper based on clap. It is designed to expose the requirement as config files, environment variables, and command line arguments with the least amount of boilerplate code.
 > Macro clap generator based on toml files
 
