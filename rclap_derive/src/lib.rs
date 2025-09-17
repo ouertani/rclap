@@ -79,7 +79,7 @@ fn generate_single_struct(
             if let Some(l) = &field.long_arg {
                 arg_params.push(quote! { long = #l });
             } else {
-                arg_params.push(quote! { long = stringify!(#id) })
+                arg_params.push(quote! { long = #id })
             }
             if let Some(s) = &field.short_arg {
                 arg_params.push(quote! { short = #s });
