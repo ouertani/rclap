@@ -65,7 +65,7 @@ fn generate_single_struct(
             let is_optional = field.optional.unwrap_or(false);
             arg_params.push(quote! { id = #id });
             if let Some(default) = &field.default {
-                if field.field_type == "String" || is_optional {
+                if field.field_type == "String" || field.field_type == "PathBuf" || is_optional {
                     arg_params.push(quote! { default_value = #default });
                 } else {
                     let default_lit: TokenStream = default.parse().expect("Invalid default value");
