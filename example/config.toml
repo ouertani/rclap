@@ -2,7 +2,7 @@ port = { type = "u16", default = "8080", doc = "Server port number", env = "PORT
 id = { type = "u16", default = "2", doc = "Server id number", env = "ID", optional = true }
 o = { env = "O", optional = true }
 s2 = { env = "O", default = "true" }
-
+s3 = { type = "bool", env = "O", default = "true" }
 [redis]
 doc = "Redis configuration"
 url = { type = "String", default = "redis://localhost:6379", doc = "Redis connection URL", env = "REDIS_URL" }
