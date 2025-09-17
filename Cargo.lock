@@ -124,7 +124,7 @@ checksum = "877a4ace8713b0bcf2a4e7eec82529c029f1d0619886d18145fea96c3ffe5c0f"
 
 [[package]]
 name = "example"
-version = "0.1.3"
+version = "0.1.4"
 dependencies = [
  "clap",
  "rclap",
@@ -331,14 +331,14 @@ dependencies = [
 
 [[package]]
 name = "rclap"
-version = "0.1.3"
+version = "0.1.4"
 dependencies = [
  "rclap_derive",
 ]
 
 [[package]]
 name = "rclap_core"
-version = "0.1.3"
+version = "0.1.4"
 dependencies = [
  "serde",
  "toml",
@@ -346,7 +346,7 @@ dependencies = [
 
 [[package]]
 name = "rclap_derive"
-version = "0.1.3"
+version = "0.1.4"
 dependencies = [
  "proc-macro2",
  "quote",
