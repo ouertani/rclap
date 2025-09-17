@@ -1,2 +1,2 @@
-port = { type = "u16", default = "8080", doc = "Server port number", env = "PORT" }
-ip = { default = "localhost", doc = "connection URL", env = "URL" }
+ip = { default = "localhost", doc = "connection URL", env = "IP" }
+port = { type = "u32", default = "8080", doc = "Server port number", env = "PORT" }
