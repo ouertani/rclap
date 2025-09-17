@@ -143,8 +143,15 @@ fn get_field_type(table: &Map<String, toml::Value>, has_sub: bool, field_name: S
         return ft.to_string();
     }
     if has_sub {
-        format!("{field_name}Config")
+        format!("{}Config", to_pascal_case(&field_name))
     } else {
         "String".to_string()
+    }
+}
+fn to_pascal_case(s: &str) -> String {
+    let mut chars = s.chars();
+    match chars.next() {
+        Some(first) => first.to_uppercase().chain(chars).collect(),
+        None => String::new(),
     }
 }

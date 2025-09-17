@@ -62,9 +62,15 @@ fn generate_single_struct(
 
             let mut arg_params = vec![];
             let id = &field.id;
+            let is_optional = field.optional.unwrap_or(false);
             arg_params.push(quote! { id = #id });
             if let Some(default) = &field.default {
-                arg_params.push(quote! { default_value = #default });
+                if field.field_type == "String" || is_optional {
+                    arg_params.push(quote! { default_value = #default });
+                } else {
+                    let default_lit: TokenStream = default.parse().expect("Invalid default value");
+                    arg_params.push(quote! { default_value_t = #default_lit });
+                }
             }
 
             if let Some(env) = &field.env {
@@ -72,6 +78,8 @@ fn generate_single_struct(
             }
             if let Some(l) = &field.long_arg {
                 arg_params.push(quote! { long = #l });
+            } else {
+                arg_params.push(quote! { long = stringify!(#id) })
             }
             if let Some(s) = &field.short_arg {
                 arg_params.push(quote! { short = #s });
@@ -82,7 +90,7 @@ fn generate_single_struct(
                 attributes.push(quote! { #[arg(#(#arg_params),*)] });
             }
 
-            if let Some(true) = &field.optional {
+            if is_optional {
                 quote! {
                     #(#attributes)*
                     pub #field_name: Option<#field_type>,
