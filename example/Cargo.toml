@@ -9,6 +9,7 @@ keywords = ["config", "args", "env", "settings", "clap"]
 license = "MIT"
 readme = "../README.md"
 repository = "https://github.com/ouertani/rclap"
+publish = false
 [dependencies]
 clap = { version = "4.5", features = ["env", "derive"] }
 rclap = { path = "../rclap", version = "0.1.1" }
