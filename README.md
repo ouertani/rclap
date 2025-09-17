@@ -83,3 +83,13 @@ The [example folder](./example) contains more working samples.
 | **short**   | same as in clap                                                          |
 | **default** | the default value to use if neither env nor command line argument is set |
 | **doc**     | the documentation string to use                                          |
+
+## dependencies
+
+rclap is macro generator based on [clap](https://crates.io/crates/clap) and [toml](https://crates.io/crates/toml).
+the clap library is used to parse command line arguments and must be imported
+
+```toml
+
+clap = { version = "4.5", features = ["env", "derive"] }
+```
