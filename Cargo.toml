@@ -3,7 +3,7 @@ description = "Static clap macro generator"
 authors = ["Slim Ouertani"]
 
 [workspace]
-members = ["example", "rclap_core", "rclap_derive"]
+members = ["rclap", "example", "rclap_core", "rclap_derive"]
 
 resolver = "3"
 

@@ -1,5 +1,5 @@
 use clap::Parser;
-use rclap_derive::config;
+use rclap::config;
 
 #[config]
 struct MyConfig;
