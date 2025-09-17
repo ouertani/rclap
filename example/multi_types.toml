@@ -1,0 +1,6 @@
+small_int = { type = "u16", default = "80" }
+int = { type = "u32", default = "8000" }
+float = { type = "f32", default = "90.80" }
+boolean = { type = "bool", default = "true" }
+string = { type = "String", default = "string_value" }
+path = { type = "PathBuf", default = "." }

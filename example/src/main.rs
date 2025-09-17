@@ -3,7 +3,7 @@ use rclap::config;
 
 #[config]
 struct MyConfig;
-#[config("config2.toml")]
+#[config("second_config.toml")]
 struct MyConfig2;
 fn main() {
     let config = MyConfig::parse();

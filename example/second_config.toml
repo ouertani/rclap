@@ -1,0 +1,2 @@
+port = { type = "u16", default = "9080" }
+id = { type = "u16", default = "2" }
