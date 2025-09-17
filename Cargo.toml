@@ -1,5 +1,5 @@
 [workspace.package]
-description = "Static clap macro generator"
+description = "rclap is a Rust utility designed to simplify the use of the clap crate. It reduces boilerplate code by generating clap structures from a TOML configuration file, allowing you to define your command-line interface's requirements externally"
 authors = ["Slim Ouertani"]
 
 [workspace]
