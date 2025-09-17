@@ -13,9 +13,6 @@ impl ConfigSpec {
         if path.extension().and_then(|s| s.to_str()) == Some("toml") {
             let spec = Self::load_toml_config(&content);
             Ok(spec)
-        } else if path.extension().and_then(|s| s.to_str()) == Some("json") {
-            let spec = Self::load_json_config(&content);
-            Ok(spec)
         } else {
             Err("Unsupported file format. Only .toml and .json are supported.".into())
         }
@@ -24,10 +21,6 @@ impl ConfigSpec {
         let generic_config_spec: GenericConfigSpec = toml::from_str(toml_content)
             .unwrap_or_else(|e| panic!("Failed to parse TOML config: {}", e));
         generic_config_spec.into()
-    }
-    fn load_json_config(json_content: &str) -> ConfigSpec {
-        serde_json::from_str(json_content)
-            .unwrap_or_else(|e| panic!("Failed to parse JSON config: {}", e))
     }
 }
 

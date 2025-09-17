@@ -2,8 +2,13 @@
 name = "rclap_core"
 version = "0.1.0"
 edition = "2024"
-
+categories = ["config"]
+description = "rclap is a Rust configuration utility to help to generate the clap structures. The main purpose is to reduce boilerplate code when using clap and expose the configuration requirements as a toml file."
+homepage = "https://github.com/ouertani/rclap"
+keywords = ["config", "configuration", "env", "environment", "settings", "clap"]
+license = "MIT"
+readme = "../README.md"
+repository = "https://github.com/ouertani/rclap"
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
 toml = "0.9"
