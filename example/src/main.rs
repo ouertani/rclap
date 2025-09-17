@@ -9,7 +9,7 @@ fn main() {
     let config = MyConfig::parse();
     println!("Config: {:#?}", config);
     println!("{}", &config.port);
-    println!("{:?}", &config.redis);
+    println!("{:?}", &config.ip);
 
     let config2 = MyConfig2::parse();
     println!("Config2: {:#?}", config2);
