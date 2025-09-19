@@ -1,16 +1,9 @@
 use clap::Parser;
 use rclap::config;
 
-#[config]
-struct MyConfig;
 #[config("second_config.toml")]
-struct MyConfig2;
+struct MyConfig;
 fn main() {
     let config = MyConfig::parse();
-    println!("Config: {:#?}", config);
-    println!("{}", &config.port);
-    println!("{:?}", &config.ip);
-
-    let config2 = MyConfig2::parse();
-    println!("Config2: {:#?}", config2);
+    println!("Config2: {:#?}", config.redis.is_some());
 }
