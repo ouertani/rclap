@@ -12,6 +12,6 @@ repository = "https://github.com/ouertani/rclap"
 publish = false
 [dependencies]
 clap = { version = "4.5", features = ["env", "derive"] }
-rclap = { path = "../rclap", version = "0.1.8" }
+rclap = { path = "../rclap" }
 [dev-dependencies]
 serial_test = "3.2"

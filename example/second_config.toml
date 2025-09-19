@@ -1,2 +1,6 @@
 port = { type = "u16", default = "9080" }
 id = { type = "u16", default = "2" }
+[_redis]
+doc = "Redis configuration"
+url = { default = "redis://localhost:6379", doc = "Redis connection URL", env = "REDIS_URL" }
+pool_size = { type = "u32", default = "10", doc = "Connection pool size", env = "REDIS_POOL_SIZE" }

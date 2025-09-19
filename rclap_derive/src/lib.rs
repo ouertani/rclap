@@ -64,14 +64,8 @@ fn generate_single_struct(
             let id = &field.id;
             let is_optional = field.optional;
             arg_params.push(quote! { id = #id });
-            if let GenericSpec::FieldSpec {
-                default,
-                env,
-                long_arg,
-                short_arg,
-            } = &field.variant
-            {
-                if let Some(default) = &default {
+            if let GenericSpec::FieldSpec(f) = &field.variant {
+                if let Some(default) = &f.default {
                     if field.field_type == "String" || field.field_type == "PathBuf" || is_optional
                     {
                         arg_params.push(quote! { default_value = #default });
@@ -81,15 +75,15 @@ fn generate_single_struct(
                         arg_params.push(quote! { default_value_t = #default_lit });
                     }
                 }
-                if let Some(env) = &env {
+                if let Some(env) = &f.env {
                     arg_params.push(quote! { env = #env });
                 }
-                if let Some(l) = &long_arg {
+                if let Some(l) = &f.long_arg {
                     arg_params.push(quote! { long = #l });
                 } else {
                     arg_params.push(quote! { long = #id })
                 }
-                if let Some(s) = &short_arg {
+                if let Some(s) = &f.short_arg {
                     arg_params.push(quote! { short = #s });
                 }
 
@@ -138,11 +132,7 @@ fn generate_single_struct(
 
 fn collect_subtypes(fields: &[Spec], structs: &mut Vec<TokenStream>) {
     for field in fields {
-        if let GenericSpec::SubtypeSpec {
-            fields: subtype_spec,
-            ..
-        } = &field.variant
-        {
+        if let GenericSpec::SubtypeSpec(subtype_spec) = &field.variant {
             let struct_name = &field.field_type;
 
             let struct_ident = syn::Ident::new(struct_name, proc_macro2::Span::call_site());
