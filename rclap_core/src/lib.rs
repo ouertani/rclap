@@ -5,7 +5,7 @@ use toml::map::Map;
 
 #[derive(serde::Deserialize)]
 pub struct ConfigSpec {
-    pub fields: Vec<FieldSpec>,
+    pub fields: Vec<Spec>,
 }
 impl ConfigSpec {
     pub fn from_file(path: &PathBuf) -> Result<Self, Box<dyn std::error::Error>> {
@@ -24,26 +24,28 @@ impl ConfigSpec {
     }
 }
 
-#[derive(serde::Deserialize)]
-pub struct FieldSpec {
+#[derive(serde::Deserialize, Clone)]
+pub struct Spec {
     pub name: String,
-    #[serde(rename = "type")]
-    pub field_type: String,
-    pub default: Option<String>,
-    pub doc: Option<String>,
-    pub env: Option<String>,
-    pub optional: Option<bool>,
-    pub subtype: Option<SubtypeSpec>,
-    #[serde(rename = "long")]
-    pub long_arg: Option<String>,
-    #[serde(rename = "short")]
-    pub short_arg: Option<char>,
     pub id: String,
+    pub field_type: String,
+    pub doc: Option<String>,
+    pub optional: bool,
+    pub variant: GenericSpec,
 }
-#[derive(serde::Deserialize)]
-pub struct SubtypeSpec {
-    pub fields: Vec<FieldSpec>,
+#[derive(serde::Deserialize, Clone)]
+pub enum GenericSpec {
+    FieldSpec {
+        default: Option<String>,
+        env: Option<String>,
+        long_arg: Option<String>,
+        short_arg: Option<char>,
+    },
+    SubtypeSpec {
+        fields: Vec<Spec>,
+    },
 }
+
 #[derive(Debug, Deserialize)]
 pub struct GenericConfigSpec {
     #[serde(flatten)]
@@ -56,15 +58,9 @@ impl From<GenericConfigSpec> for ConfigSpec {
         for (field_name, value) in generic.fields {
             match value {
                 toml::Value::Table(table) => {
-                    if let Some(field_spec) = table_to_field_spec(field_name.clone(), &table, None)
-                    {
-                        fields.push(field_spec);
-                    } else {
-                        eprintln!(
-                            "Warning: Skipping field '{}' - no type specified",
-                            field_name
-                        );
-                    }
+                    let field_spec = table_to_field_spec(field_name.clone(), &table, None);
+
+                    fields.push(field_spec);
                 }
                 _ => {
                     eprintln!("Warning: Skipping non-table field '{}'", field_name);
@@ -79,7 +75,7 @@ fn table_to_field_spec(
     name: String,
     table: &toml::value::Table,
     parent_id: Option<String>,
-) -> Option<FieldSpec> {
+) -> Spec {
     let default = table
         .get("default")
         .and_then(|v| v.as_str())
@@ -92,7 +88,10 @@ fn table_to_field_spec(
         .and_then(|v| v.as_str())
         .filter(|s| s.chars().count() == 1)
         .and_then(|s| s.chars().next());
-    let optional = table.get("optional").and_then(|v| v.as_bool());
+    let optional = table
+        .get("optional")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
     let id = match parent_id {
         None => name.clone(),
         Some(pname) => format!("{pname}.{name}").to_string(),
@@ -103,32 +102,33 @@ fn table_to_field_spec(
     for (sub_name, sub_value) in table {
         if !reserved_keys.contains(&sub_name.as_str())
             && let toml::Value::Table(sub_table) = sub_value
-            && let Some(sub_field) =
-                table_to_field_spec(sub_name.clone(), sub_table, Some(id.clone()))
         {
+            let sub_field = table_to_field_spec(sub_name.clone(), sub_table, Some(id.clone()));
             subtype_fields.push(sub_field);
         }
     }
     let field_type = get_field_type(table, !subtype_fields.is_empty(), name.clone());
+    let variant = if subtype_fields.is_empty() {
+        GenericSpec::FieldSpec {
+            default,
+            env,
+            long_arg,
+            short_arg,
+        }
+    } else {
+        GenericSpec::SubtypeSpec {
+            fields: subtype_fields.clone(),
+        }
+    };
 
-    Some(FieldSpec {
+    Spec {
         name,
-        field_type: field_type.to_string(),
-        default,
-        doc,
-        env,
-        optional,
-        long_arg,
-        short_arg,
         id,
-        subtype: if subtype_fields.is_empty() {
-            None
-        } else {
-            Some(SubtypeSpec {
-                fields: subtype_fields,
-            })
-        },
-    })
+        field_type,
+        doc,
+        optional,
+        variant,
+    }
 }
 fn get_field_type(table: &Map<String, toml::Value>, has_sub: bool, field_name: String) -> String {
     let field_type = table.get("type").and_then(|v| v.as_str());
@@ -154,13 +154,11 @@ mod tests {
     use std::fs;
     use std::path::PathBuf;
     use tempfile::TempDir;
-    impl ConfigSpec {
-        fn get_field(&self, name: &str) -> Option<&FieldSpec> {
-            self.fields.iter().find(|f| f.name == name)
-        }
+    fn get_field<'a>(fields: &'a [Spec], name: &str) -> Option<&'a Spec> {
+        fields.iter().find(|f| f.name == name)
     }
-    impl SubtypeSpec {
-        pub fn get_field(&self, name: &str) -> Option<&FieldSpec> {
+    impl ConfigSpec {
+        fn get_field(&self, name: &str) -> Option<&Spec> {
             self.fields.iter().find(|f| f.name == name)
         }
     }
@@ -184,62 +182,131 @@ name = { type = "String", default = "test", long = "name", short = "n" }
         assert_eq!(config_spec.fields.len(), 2);
 
         let port_field = config_spec.get_field("port").unwrap();
+
         assert_eq!(port_field.name, "port");
         assert_eq!(port_field.field_type, "u16");
-        assert_eq!(port_field.default, Some("8080".to_string()));
         assert_eq!(port_field.doc, Some("Server port".to_string()));
-        assert_eq!(port_field.env, Some("PORT".to_string()));
         assert_eq!(port_field.id, "port");
-        assert!(port_field.subtype.is_none());
+        if let port_variant @ GenericSpec::FieldSpec { .. } = &port_field.variant {
+            match port_variant {
+                GenericSpec::FieldSpec {
+                    default,
+                    env,
+                    long_arg,
+                    short_arg,
+                } => {
+                    assert_eq!(default, &Some("8080".to_string()));
+                    assert_eq!(env, &Some("PORT".to_string()));
+                    assert_eq!(long_arg, &None);
+                    assert_eq!(short_arg, &None);
+                }
+                _ => panic!("Expected FieldSpec variant"),
+            }
+        } else {
+            panic!("Expected FieldSpec variant");
+        }
 
         let name_field = config_spec.get_field("name").unwrap();
+
         assert_eq!(name_field.name, "name");
         assert_eq!(name_field.field_type, "String");
-        assert_eq!(name_field.long_arg, Some("name".to_string()));
-        assert_eq!(name_field.short_arg, Some('n'));
+        if let name_variant @ GenericSpec::FieldSpec { .. } = &name_field.variant {
+            match name_variant {
+                GenericSpec::FieldSpec {
+                    default,
+                    env,
+                    long_arg,
+                    short_arg,
+                } => {
+                    assert_eq!(default, &Some("test".to_string()));
+                    assert_eq!(env, &None);
+                    assert_eq!(long_arg, &Some("name".to_string()));
+                    assert_eq!(short_arg, &Some('n'));
+                }
+                _ => panic!("Expected FieldSpec variant"),
+            }
+        } else {
+            panic!("Expected FieldSpec variant");
+        }
     }
 
     #[test]
     fn test_nested_field_parsing() {
         let toml_content = r#"
-            [database]
-            type = "DatabaseConfig"
-            doc = "Database configuration"
+        [database]
+        type = "DatabaseConfig"
+        doc = "Database configuration"
 
-            [database.host]
-            type = "String"
-            default = "localhost"
-            env = "DB_HOST"
-            
-            [database.port]
-            type = "u16"
-            default = "5432"
-            env = "DB_PORT"
-            "#;
+        [database.host]
+        type = "String"
+        default = "localhost"
+        env = "DB_HOST"
+        
+        [database.port]
+        type = "u16"
+        default = "5432"
+        env = "DB_PORT"
+        "#;
+
         let config_spec = ConfigSpec::load_toml_config(toml_content);
-
         assert_eq!(config_spec.fields.len(), 1);
 
+        // Test database field
         let db_field = &config_spec.fields[0];
         assert_eq!(db_field.name, "database");
         assert_eq!(db_field.field_type, "DatabaseConfig");
         assert_eq!(db_field.id, "database");
 
-        let subtype = db_field.subtype.as_ref().unwrap();
-        assert_eq!(subtype.fields.len(), 2);
+        // Extract and test database subtype
+        let GenericSpec::SubtypeSpec { fields, .. } = &db_field.variant else {
+            panic!("Expected SubtypeSpec variant for database field");
+        };
 
-        let host_field = &subtype.fields[0];
+        assert_eq!(fields.len(), 2);
+
+        // Test host field
+        let host_field = &fields[0];
         assert_eq!(host_field.name, "host");
         assert_eq!(host_field.field_type, "String");
-        assert_eq!(host_field.default, Some("localhost".to_string()));
-        assert_eq!(host_field.env, Some("DB_HOST".to_string()));
         assert_eq!(host_field.id, "database.host");
 
-        let port_field = &subtype.fields[1];
+        let GenericSpec::FieldSpec {
+            default: host_default,
+            env: host_env,
+            long_arg: host_long_arg,
+            short_arg: host_short_arg,
+            ..
+        } = &host_field.variant
+        else {
+            panic!("Expected FieldSpec variant for host field");
+        };
+
+        assert_eq!(host_default, &Some("localhost".to_string()));
+        assert_eq!(host_env, &Some("DB_HOST".to_string()));
+        assert_eq!(host_long_arg, &None);
+        assert_eq!(host_short_arg, &None);
+
+        // Test port field
+        let port_field = &fields[1];
         assert_eq!(port_field.name, "port");
         assert_eq!(port_field.field_type, "u16");
-        assert_eq!(port_field.default, Some("5432".to_string()));
         assert_eq!(port_field.id, "database.port");
+
+        let GenericSpec::FieldSpec {
+            default: port_default,
+            env: port_env,
+            long_arg: port_long_arg,
+            short_arg: port_short_arg,
+            ..
+        } = &port_field.variant
+        else {
+            panic!("Expected FieldSpec variant for port field");
+        };
+
+        assert_eq!(port_default, &Some("5432".to_string()));
+        assert_eq!(port_env, &Some("DB_PORT".to_string()));
+        assert_eq!(port_long_arg, &None);
+        assert_eq!(port_short_arg, &None);
     }
 
     #[test]
@@ -267,25 +334,31 @@ name = { type = "String", default = "test", long = "name", short = "n" }
         let app_field = config_spec.get_field("app").unwrap();
         assert_eq!(app_field.name, "app");
         assert_eq!(app_field.field_type, "AppConfig");
+        let GenericSpec::SubtypeSpec { fields, .. } = &app_field.variant else {
+            panic!("Expected SubtypeSpec variant for database field");
+        };
 
-        let sub_fields = app_field.subtype.as_ref().unwrap();
-        let server_field = sub_fields.get_field("server").unwrap();
+        // let sub_fields = app_field.subtype.as_ref().unwrap();
+        let server_field = get_field(fields, "server").unwrap();
         assert_eq!(server_field.name, "server");
         assert_eq!(server_field.field_type, "ServerConfig");
         assert_eq!(server_field.id, "app.server");
+        let GenericSpec::SubtypeSpec { fields, .. } = &server_field.variant else {
+            panic!("Expected SubtypeSpec variant for database field");
+        };
+        assert_eq!(fields.len(), 2);
 
-        let server_subtype = server_field.subtype.as_ref().unwrap();
-        assert_eq!(server_subtype.fields.len(), 2);
-
-        let http_field = &server_subtype.fields[0];
+        let http_field = &fields[0];
         assert_eq!(http_field.name, "http");
         assert_eq!(http_field.field_type, "HttpConfig");
         assert_eq!(http_field.id, "app.server.http");
 
-        let http_subtype = http_field.subtype.as_ref().unwrap();
-        assert_eq!(http_subtype.fields.len(), 2);
+        let GenericSpec::SubtypeSpec { fields, .. } = &http_field.variant else {
+            panic!("Expected SubtypeSpec variant for database field");
+        };
+        assert_eq!(fields.len(), 2);
 
-        let port_field = &http_subtype.get_field("port").unwrap();
+        let port_field = get_field(fields, "port").unwrap();
         assert_eq!(port_field.name, "port");
         assert_eq!(port_field.id, "app.server.http.port");
     }
@@ -302,13 +375,13 @@ name = { type = "String", default = "test", long = "name", short = "n" }
         assert_eq!(config_spec.fields.len(), 3);
 
         let port_field = config_spec.get_field("port").unwrap();
-        assert_eq!(port_field.optional, Some(true));
+        assert!(port_field.optional);
 
         let host_field = config_spec.get_field("host").unwrap();
-        assert_eq!(host_field.optional, None); // Not specified
+        assert!(!host_field.optional); // Not specified
 
         let debug_field = config_spec.get_field("debug").unwrap();
-        assert_eq!(debug_field.optional, Some(false));
+        assert!(!debug_field.optional);
     }
 
     #[test]
@@ -324,16 +397,28 @@ empty_short = { type = "String", short = "" }
         assert_eq!(config_spec.fields.len(), 4);
 
         let port_field = config_spec.get_field("port").unwrap();
-        assert_eq!(port_field.short_arg, Some('p'));
+        let GenericSpec::FieldSpec { short_arg, .. } = port_field.variant else {
+            panic!("Expected FieldSpec variant for port field");
+        };
+        assert_eq!(short_arg, Some('p'));
 
         let host_field = config_spec.get_field("host").unwrap();
-        assert_eq!(host_field.short_arg, Some('h'));
+        let GenericSpec::FieldSpec { short_arg, .. } = host_field.variant else {
+            panic!("Expected FieldSpec variant for port field");
+        };
+        assert_eq!(short_arg, Some('h'));
 
         let invalid_field = config_spec.get_field("invalid_short").unwrap();
-        assert_eq!(invalid_field.short_arg, None); // Invalid multi-char
+        let GenericSpec::FieldSpec { short_arg, .. } = invalid_field.variant else {
+            panic!("Expected FieldSpec variant for port field");
+        };
+        assert_eq!(short_arg, None); // Invalid multi-char
 
         let empty_field = config_spec.get_field("empty_short").unwrap();
-        assert_eq!(empty_field.short_arg, None); // Empty string
+        let GenericSpec::FieldSpec { short_arg, .. } = empty_field.variant else {
+            panic!("Expected FieldSpec variant for port field");
+        };
+        assert_eq!(short_arg, None); // Empty string
     }
 
     #[test]
@@ -453,33 +538,51 @@ host = { type = "String", default = "localhost" }
         let app_name = config_spec.get_field("app_name").unwrap();
         assert_eq!(app_name.name, "app_name");
         assert_eq!(app_name.field_type, "String");
-        assert_eq!(app_name.env, Some("APP_NAME".to_string()));
+        let GenericSpec::FieldSpec { env, .. } = &app_name.variant else {
+            panic!("Expected FieldSpec variant for port field");
+        };
+        assert_eq!(*env, Some("APP_NAME".to_string()));
 
         // Check nested database config
         let database = config_spec.get_field("database").unwrap();
         assert_eq!(database.name, "database");
         assert_eq!(database.field_type, "DatabaseConfig");
 
-        let db_subtype = database.subtype.as_ref().unwrap();
-        assert_eq!(db_subtype.fields.len(), 2);
+        let GenericSpec::SubtypeSpec { fields, .. } = &database.variant else {
+            panic!("Expected SubtypeSpec variant for database field");
+        };
+        assert_eq!(fields.len(), 2);
 
-        let primary = db_subtype.get_field("primary").unwrap();
+        let primary = get_field(fields, "primary").unwrap();
         assert_eq!(primary.name, "primary");
         assert_eq!(primary.id, "database.primary");
-
-        let primary_subtype = primary.subtype.as_ref().unwrap();
-        let url_field = primary_subtype.get_field("url").unwrap();
+        let GenericSpec::SubtypeSpec {
+            fields: primary_subtype,
+            ..
+        } = &primary.variant
+        else {
+            panic!("Expected SubtypeSpec variant for database field");
+        };
+        let url_field = get_field(primary_subtype, "url").unwrap();
         assert_eq!(url_field.id, "database.primary.url");
 
-        // Check auto-generated type for logging
         let logging = config_spec.get_field("logging").unwrap();
         assert_eq!(logging.name, "logging");
         assert_eq!(logging.field_type, "LoggingConfig");
-
-        let logging_subtype = logging.subtype.as_ref().unwrap();
-        let level_field = logging_subtype.get_field("level").unwrap();
+        let GenericSpec::SubtypeSpec {
+            fields: logging_subtype,
+            ..
+        } = &logging.variant
+        else {
+            panic!("Expected SubtypeSpec variant for database field");
+        };
+        let level_field = get_field(logging_subtype, "level").unwrap();
         assert_eq!(level_field.name, "level");
-        assert_eq!(level_field.short_arg, Some('l'));
+        let GenericSpec::FieldSpec { short_arg, .. } = level_field.variant else {
+            panic!("Expected FieldSpec variant for port field");
+        };
+
+        assert_eq!(short_arg, Some('l'));
     }
 
     #[test]

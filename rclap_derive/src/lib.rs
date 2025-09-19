@@ -45,7 +45,7 @@ fn generate_struct(
 
 fn generate_single_struct(
     struct_ident: &proc_macro2::Ident,
-    fields: &[FieldSpec],
+    fields: &[Spec],
     is_main: bool,
 ) -> TokenStream {
     let field_definitions: Vec<TokenStream> = fields
@@ -62,32 +62,40 @@ fn generate_single_struct(
 
             let mut arg_params = vec![];
             let id = &field.id;
-            let is_optional = field.optional.unwrap_or(false);
+            let is_optional = field.optional;
             arg_params.push(quote! { id = #id });
-            if let Some(default) = &field.default {
-                if field.field_type == "String" || field.field_type == "PathBuf" || is_optional {
-                    arg_params.push(quote! { default_value = #default });
-                } else {
-                    let default_lit: TokenStream = default.parse().expect("Invalid default value");
-                    arg_params.push(quote! { default_value_t = #default_lit });
+            if let GenericSpec::FieldSpec {
+                default,
+                env,
+                long_arg,
+                short_arg,
+            } = &field.variant
+            {
+                if let Some(default) = &default {
+                    if field.field_type == "String" || field.field_type == "PathBuf" || is_optional
+                    {
+                        arg_params.push(quote! { default_value = #default });
+                    } else {
+                        let default_lit: TokenStream =
+                            default.parse().expect("Invalid default value");
+                        arg_params.push(quote! { default_value_t = #default_lit });
+                    }
                 }
-            }
+                if let Some(env) = &env {
+                    arg_params.push(quote! { env = #env });
+                }
+                if let Some(l) = &long_arg {
+                    arg_params.push(quote! { long = #l });
+                } else {
+                    arg_params.push(quote! { long = #id })
+                }
+                if let Some(s) = &short_arg {
+                    arg_params.push(quote! { short = #s });
+                }
 
-            if let Some(env) = &field.env {
-                arg_params.push(quote! { env = #env });
-            }
-            if let Some(l) = &field.long_arg {
-                arg_params.push(quote! { long = #l });
-            } else {
-                arg_params.push(quote! { long = #id })
-            }
-            if let Some(s) = &field.short_arg {
-                arg_params.push(quote! { short = #s });
-            }
-            if field.subtype.is_some() {
-                attributes.push(quote! { #[command(flatten)] });
-            } else {
                 attributes.push(quote! { #[arg(#(#arg_params),*)] });
+            } else {
+                attributes.push(quote! { #[command(flatten)] });
             }
 
             if is_optional {
@@ -128,16 +136,20 @@ fn generate_single_struct(
     }
 }
 
-fn collect_subtypes(fields: &[FieldSpec], structs: &mut Vec<TokenStream>) {
+fn collect_subtypes(fields: &[Spec], structs: &mut Vec<TokenStream>) {
     for field in fields {
-        if let Some(subtype_spec) = &field.subtype {
+        if let GenericSpec::SubtypeSpec {
+            fields: subtype_spec,
+            ..
+        } = &field.variant
+        {
             let struct_name = &field.field_type;
 
             let struct_ident = syn::Ident::new(struct_name, proc_macro2::Span::call_site());
-            let subtype_struct = generate_single_struct(&struct_ident, &subtype_spec.fields, false);
+            let subtype_struct = generate_single_struct(&struct_ident, subtype_spec, false);
             structs.push(subtype_struct);
 
-            collect_subtypes(&subtype_spec.fields, structs);
+            collect_subtypes(subtype_spec, structs);
         }
     }
 }
