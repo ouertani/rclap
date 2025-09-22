@@ -5,5 +5,5 @@ use rclap::config;
 struct MyConfig;
 fn main() {
     let config = MyConfig::parse();
-    println!("Config2: {:#?}", config.redis.is_some());
+    println!("Config2: {:#?}", config.redis);
 }

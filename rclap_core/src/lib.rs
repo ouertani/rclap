@@ -44,11 +44,11 @@ impl Spec {
     ) -> Self {
         let name = match &variant {
             GenericSpec::FieldSpec { .. } => toml_tag_name.clone(),
-            GenericSpec::SubtypeSpec { .. } => to_name(&toml_tag_name),
+            GenericSpec::SubtypeSpec { .. } => toml_tag_name.clone(),
         };
         let optional = match &variant {
             GenericSpec::FieldSpec(f) => f.optional,
-            GenericSpec::SubtypeSpec { .. } => toml_tag_name.starts_with('_'),
+            GenericSpec::SubtypeSpec { .. } => false,
         };
         Spec {
             toml_tag_name,
@@ -128,7 +128,7 @@ fn table_to_field_spec(
         .and_then(|v| v.as_str())
         .filter(|s| s.chars().count() == 1)
         .and_then(|s| s.chars().next());
-    let name = to_name(&toml_tag_name);
+    let name = &toml_tag_name;
     let id = match parent_id {
         None => name.clone(),
         Some(pname) => format!("{pname}.{name}").to_string(),
@@ -182,9 +182,7 @@ fn to_pascal_case(s: &str) -> String {
         None => String::new(),
     }
 }
-fn to_name(s: &str) -> String {
-    s.trim_start_matches('_').to_string()
-}
+
 #[cfg(test)]
 mod tests {
     use super::*;
