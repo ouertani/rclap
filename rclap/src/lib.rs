@@ -13,7 +13,7 @@
 //!
 //! 2- Apply the Macro: Use the #[config] macro on an empty struct in your Rust code. The macro reads the TOML file and generates the complete clap::Parser implementation for you.
 //!
-//! ```rust
+//! ```text
 //! use clap::Parser;
 //! use rclap::config;
 //!
@@ -24,7 +24,7 @@
 //!
 //! 3- Parse and Use: Your application can then simply call MyConfig::parse() to handle all command-line and environment variable parsing.
 //!
-//! ```rust
+//! ```text
 //!
 //! fn main() {
 //!     let config = MyConfig::parse();
@@ -37,7 +37,7 @@
 //!
 //! For instance, you can use the command-line flags --ip and --port to pass values directly. This would generate a help message like the one below, which clearly shows the available options, their default values, and the corresponding environment variables.
 //!
-//! ```
+//! ```text
 //!
 //! Usage: example [OPTIONS]
 //!
