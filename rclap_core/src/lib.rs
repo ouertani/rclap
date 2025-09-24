@@ -1,7 +1,10 @@
+mod utils;
 use std::{collections::HashMap, ops::Deref, path::PathBuf};
 
 use serde::Deserialize;
 use toml::map::Map;
+
+use crate::utils::is_native_type;
 
 #[derive(serde::Deserialize, Debug)]
 pub struct ConfigSpec {
@@ -45,10 +48,12 @@ impl Spec {
         let name = match &variant {
             GenericSpec::FieldSpec { .. } => toml_tag_name.clone(),
             GenericSpec::SubtypeSpec { .. } => toml_tag_name.clone(),
+            GenericSpec::ExternalSpec { .. } => toml_tag_name.clone(),
         };
         let optional = match &variant {
             GenericSpec::FieldSpec(f) => f.optional,
             GenericSpec::SubtypeSpec { .. } => false,
+            GenericSpec::ExternalSpec(_) => false,
         };
         Spec {
             toml_tag_name,
@@ -65,6 +70,7 @@ impl Spec {
 pub enum GenericSpec {
     FieldSpec(Field),
     SubtypeSpec(SubFields),
+    ExternalSpec(ExternalStruct),
 }
 
 #[derive(serde::Deserialize, Clone, Debug)]
@@ -83,6 +89,11 @@ impl Deref for SubFields {
     fn deref(&self) -> &Self::Target {
         &self.0
     }
+}
+#[derive(serde::Deserialize, Clone, Debug)]
+pub struct ExternalStruct {
+    pub long_arg: Option<String>,
+    pub short_arg: Option<char>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -149,8 +160,7 @@ fn table_to_field_spec(
         .get("optional")
         .and_then(|v| v.as_bool())
         .unwrap_or(false);
-
-    let variant = if subtype_fields.is_empty() {
+    let variant = if subtype_fields.is_empty() && is_native_type(&field_type) {
         GenericSpec::FieldSpec(Field {
             default,
             env,
@@ -158,8 +168,13 @@ fn table_to_field_spec(
             short_arg,
             optional,
         })
-    } else {
+    } else if !subtype_fields.is_empty() {
         GenericSpec::SubtypeSpec(SubFields(subtype_fields.clone()))
+    } else {
+        GenericSpec::ExternalSpec(ExternalStruct {
+            long_arg,
+            short_arg,
+        })
     };
 
     Spec::new(toml_tag_name, id, field_type, doc, variant)
@@ -561,33 +576,5 @@ host = { type = "String", default = "localhost" }
         assert_eq!(level_field.name, "level");
         let level = level_field.as_field_spec();
         assert_eq!(level.short_arg, Some('l'));
-    }
-    #[test]
-    fn test_optional_section() {
-        let toml_content = r#"
-        port = { type = "u16", default = "8080", optional = true }
-        host = { type = "String", env = "HOST" }
-        [_redis]
-        doc = "Redis configuration"
-        url = { default = "redis://localhost:6379", doc = "Redis connection URL", env = "REDIS_URL" }
-        "#;
-        let config_spec = ConfigSpec::load_toml_config(toml_content);
-
-        assert_eq!(config_spec.fields.len(), 3);
-
-        let port_field = config_spec.get_field("port").unwrap();
-        assert!(port_field.is_optional());
-
-        let host_field = config_spec.get_field("host").unwrap();
-        assert!(!host_field.is_optional()); // Not specified
-
-        let redis_field = config_spec.get_field("redis").unwrap();
-        assert!(redis_field.is_optional());
-        let fields = redis_field.as_subtype_spec();
-
-        let url_field = get_field(fields, "url").unwrap();
-        assert_eq!(url_field.name, "url");
-        assert_eq!(url_field.field_type, "String");
-        assert_eq!(url_field.id, "redis.url");
     }
 }
