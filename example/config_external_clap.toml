@@ -1,0 +1,3 @@
+port = { type = "u16", default = "9080" }
+id = { type = "u16", default = "2" }
+redis = { type = "RedisConfig", doc = "Redis configuration" }
