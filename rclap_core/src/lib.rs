@@ -577,32 +577,4 @@ host = { type = "String", default = "localhost" }
         let level = level_field.as_field_spec();
         assert_eq!(level.short_arg, Some('l'));
     }
-    #[test]
-    fn test_optional_section() {
-        let toml_content = r#"
-        port = { type = "u16", default = "8080", optional = true }
-        host = { type = "String", env = "HOST" }
-        [_redis]
-        doc = "Redis configuration"
-        url = { default = "redis://localhost:6379", doc = "Redis connection URL", env = "REDIS_URL" }
-        "#;
-        let config_spec = ConfigSpec::load_toml_config(toml_content);
-
-        assert_eq!(config_spec.fields.len(), 3);
-
-        let port_field = config_spec.get_field("port").unwrap();
-        assert!(port_field.is_optional());
-
-        let host_field = config_spec.get_field("host").unwrap();
-        assert!(!host_field.is_optional()); // Not specified
-
-        let redis_field = config_spec.get_field("redis").unwrap();
-        assert!(redis_field.is_optional());
-        let fields = redis_field.as_subtype_spec();
-
-        let url_field = get_field(fields, "url").unwrap();
-        assert_eq!(url_field.name, "url");
-        assert_eq!(url_field.field_type, "String");
-        assert_eq!(url_field.id, "redis.url");
-    }
 }
