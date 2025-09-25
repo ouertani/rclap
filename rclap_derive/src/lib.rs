@@ -69,6 +69,9 @@ fn generate_single_struct(
                     if field.field_type == "String" || field.field_type == "PathBuf" || is_optional
                     {
                         arg_params.push(quote! { default_value = #default });
+                    } else if field.field_type == "char" {
+                        let c = default.chars().next().unwrap();
+                        arg_params.push(quote! { default_value = #c });
                     } else {
                         let default_lit: TokenStream =
                             default.parse().expect("Invalid default value");

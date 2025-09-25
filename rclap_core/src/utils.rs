@@ -23,3 +23,25 @@ const NATIVE_TYPES: [&str; 20] = [
 pub(crate) fn is_native_type(ty: &str) -> bool {
     NATIVE_TYPES.contains(&ty)
 }
+pub(crate) fn get_field_type(
+    table: &toml::map::Map<String, toml::Value>,
+    has_sub: bool,
+    field_name: String,
+) -> String {
+    let field_type = table.get("type").and_then(|v| v.as_str());
+    if let Some(ft) = field_type {
+        return ft.to_string();
+    }
+    if has_sub {
+        format!("{}Config", to_pascal_case(&field_name))
+    } else {
+        "String".to_string()
+    }
+}
+pub(crate) fn to_pascal_case(s: &str) -> String {
+    let mut chars = s.chars();
+    match chars.next() {
+        Some(first) => first.to_uppercase().chain(chars).collect(),
+        None => String::new(),
+    }
+}

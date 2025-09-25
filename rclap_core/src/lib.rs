@@ -4,7 +4,7 @@ use std::{collections::HashMap, ops::Deref, path::PathBuf};
 use serde::Deserialize;
 use toml::map::Map;
 
-use crate::utils::is_native_type;
+use crate::utils::{get_field_type, is_native_type};
 
 #[derive(serde::Deserialize, Debug)]
 pub struct ConfigSpec {
@@ -178,24 +178,6 @@ fn table_to_field_spec(
     };
 
     Spec::new(toml_tag_name, id, field_type, doc, variant)
-}
-fn get_field_type(table: &Map<String, toml::Value>, has_sub: bool, field_name: String) -> String {
-    let field_type = table.get("type").and_then(|v| v.as_str());
-    if let Some(ft) = field_type {
-        return ft.to_string();
-    }
-    if has_sub {
-        format!("{}Config", to_pascal_case(&field_name))
-    } else {
-        "String".to_string()
-    }
-}
-fn to_pascal_case(s: &str) -> String {
-    let mut chars = s.chars();
-    match chars.next() {
-        Some(first) => first.to_uppercase().chain(chars).collect(),
-        None => String::new(),
-    }
 }
 
 #[cfg(test)]
