@@ -1,10 +1,8 @@
 mod utils;
 use std::{collections::HashMap, ops::Deref, path::PathBuf};
 
-use serde::Deserialize;
-use toml::map::Map;
-
 use crate::utils::{get_field_type, is_native_type};
+use serde::Deserialize;
 
 #[derive(serde::Deserialize, Debug)]
 pub struct ConfigSpec {
@@ -183,9 +181,12 @@ fn table_to_field_spec(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::utils::to_pascal_case;
     use std::fs;
     use std::path::PathBuf;
     use tempfile::TempDir;
+    use toml::map::Map;
+
     fn get_field<'a>(fields: &'a [Spec], name: &str) -> Option<&'a Spec> {
         fields.iter().find(|f| f.name == name)
     }
@@ -340,7 +341,6 @@ name = { type = "String", default = "test", long = "name", short = "n" }
         assert_eq!(app_field.field_type, "AppConfig");
 
         let fields = app_field.as_subtype_spec();
-        // let sub_fields = app_field.subtype.as_ref().unwrap();
         let server_field = get_field(fields, "server").unwrap();
         assert_eq!(server_field.name, "server");
         assert_eq!(server_field.field_type, "ServerConfig");
@@ -373,14 +373,14 @@ name = { type = "String", default = "test", long = "name", short = "n" }
 
         assert_eq!(config_spec.fields.len(), 3);
 
-        let port_field = config_spec.get_field("port").unwrap();
-        assert!(port_field.is_optional());
+        let port_field = config_spec.get_field("port").unwrap().as_field_spec();
+        assert!(port_field.optional);
 
-        let host_field = config_spec.get_field("host").unwrap();
-        assert!(!host_field.is_optional()); // Not specified
+        let host_field = config_spec.get_field("host").unwrap().as_field_spec();
+        assert!(!host_field.optional); // Not specified
 
-        let debug_field = config_spec.get_field("debug").unwrap();
-        assert!(!debug_field.is_optional());
+        let debug_field = config_spec.get_field("debug").unwrap().as_field_spec();
+        assert!(!debug_field.optional);
     }
 
     #[test]

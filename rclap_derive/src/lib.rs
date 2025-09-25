@@ -3,7 +3,6 @@ use std::{env, path::Path};
 use proc_macro2::TokenStream;
 use quote::quote;
 use rclap_core::*;
-
 #[proc_macro_attribute]
 pub fn config(
     args: proc_macro::TokenStream,
@@ -33,7 +32,7 @@ fn generate_struct(
 ) -> proc_macro2::TokenStream {
     let mut all_structs = Vec::new();
 
-    let main_struct = generate_single_struct(struct_name, &config_spec.fields, true);
+    let main_struct = generate_single_struct(struct_name, &config_spec.fields);
     all_structs.push(main_struct);
 
     collect_subtypes(&config_spec.fields, &mut all_structs);
@@ -43,11 +42,7 @@ fn generate_struct(
     }
 }
 
-fn generate_single_struct(
-    struct_ident: &proc_macro2::Ident,
-    fields: &[Spec],
-    is_main: bool,
-) -> TokenStream {
+fn generate_single_struct(struct_ident: &proc_macro2::Ident, fields: &[Spec]) -> TokenStream {
     let field_definitions: Vec<TokenStream> = fields
         .iter()
         .map(|field| {
@@ -66,8 +61,11 @@ fn generate_single_struct(
             arg_params.push(quote! { id = #id });
             if let GenericSpec::FieldSpec(f) = &field.variant {
                 if let Some(default) = &f.default {
-                    if field.field_type == "String" || field.field_type == "PathBuf" || is_optional
+                    if field.field_type == "String"
+                        || field.field_type == "std::path::PathBuf"
+                        || is_optional
                     {
+                        dbg!(&field);
                         arg_params.push(quote! { default_value = #default });
                     } else if field.field_type == "char" {
                         let c = default.chars().next().unwrap();
@@ -109,27 +107,13 @@ fn generate_single_struct(
         })
         .collect();
 
-    let derives = quote! { #[derive(Debug, Clone, PartialEq, Default, Parser)] };
-
-    let impl_block = if is_main {
-        quote! {
-            impl #struct_ident {
-                pub fn new() -> Self {
-                    Default::default()
-                }
-            }
-        }
-    } else {
-        quote! {}
-    };
+    let derives = quote! { #[derive(Debug, Clone, PartialEq,  Parser)] };
 
     quote! {
         #derives
         pub struct #struct_ident {
             #(#field_definitions)*
         }
-
-        #impl_block
     }
 }
 
@@ -139,7 +123,7 @@ fn collect_subtypes(fields: &[Spec], structs: &mut Vec<TokenStream>) {
             let struct_name = &field.field_type;
 
             let struct_ident = syn::Ident::new(struct_name, proc_macro2::Span::call_site());
-            let subtype_struct = generate_single_struct(&struct_ident, subtype_spec, false);
+            let subtype_struct = generate_single_struct(&struct_ident, subtype_spec);
             structs.push(subtype_struct);
 
             collect_subtypes(subtype_spec, structs);
