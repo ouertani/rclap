@@ -1,4 +1,4 @@
-const NATIVE_TYPES: [&str; 19] = [
+const NATIVE_TYPES: [&str; 20] = [
     "i8",
     "i16",
     "i32",
@@ -18,6 +18,7 @@ const NATIVE_TYPES: [&str; 19] = [
     "String",
     "OsString",
     "std::path::PathBuf",
+    "char",
 ];
 pub(crate) fn is_native_type(ty: &str) -> bool {
     NATIVE_TYPES.contains(&ty)
