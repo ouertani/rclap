@@ -65,7 +65,6 @@ fn generate_single_struct(struct_ident: &proc_macro2::Ident, fields: &[Spec]) ->
                         || field.field_type == "std::path::PathBuf"
                         || is_optional
                     {
-                        dbg!(&field);
                         arg_params.push(quote! { default_value = #default });
                     } else if field.field_type == "char" {
                         let c = default.chars().next().unwrap();
