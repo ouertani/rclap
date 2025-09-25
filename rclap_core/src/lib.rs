@@ -4,6 +4,7 @@ use std::{collections::HashMap, ops::Deref, path::PathBuf};
 use crate::utils::{get_field_type, is_native_type};
 use serde::Deserialize;
 
+pub const PATH_BUF: &str = "std::path::PathBuf";
 #[derive(serde::Deserialize, Debug)]
 pub struct ConfigSpec {
     pub fields: Vec<Spec>,

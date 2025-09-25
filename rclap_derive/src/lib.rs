@@ -61,11 +61,7 @@ fn generate_single_struct(struct_ident: &proc_macro2::Ident, fields: &[Spec]) ->
             arg_params.push(quote! { id = #id });
             if let GenericSpec::FieldSpec(f) = &field.variant {
                 if let Some(default) = &f.default {
-                    if field.field_type == "String"
-                        || field.field_type == "std::path::PathBuf"
-                        || is_optional
-                    {
-                        dbg!(&field);
+                    if field.field_type == "String" || field.field_type == PATH_BUF || is_optional {
                         arg_params.push(quote! { default_value = #default });
                     } else if field.field_type == "char" {
                         let c = default.chars().next().unwrap();
