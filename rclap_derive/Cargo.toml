@@ -1,6 +1,6 @@
 [package]
 name = "rclap_derive"
-version = "0.1.15"
+version = "0.1.16"
 edition = "2024"
 categories = ["config"]
 description = "rclap is a Rust utility designed to simplify the use of the clap crate. It reduces boilerplate code by generating clap structures from a TOML configuration file, allowing you to define your command-line interface's requirements externally"
@@ -15,5 +15,5 @@ proc-macro = true
 [dependencies]
 proc-macro2 = "1.0"
 quote = "1.0"
-rclap_core = { path = "../rclap_core", version = "0.1.15" }
+rclap_core = { path = "../rclap_core", version = "0.1.16" }
 syn = { version = "2.0", features = ["full"] }
