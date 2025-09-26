@@ -59,34 +59,60 @@ fn generate_single_struct(struct_ident: &proc_macro2::Ident, fields: &[Spec]) ->
             let id = &field.id;
             let is_optional = field.optional;
             arg_params.push(quote! { id = #id });
-            if let GenericSpec::FieldSpec(f) = &field.variant {
-                if let Some(default) = &f.default {
-                    if field.field_type == "String" || field.field_type == PATH_BUF || is_optional {
-                        arg_params.push(quote! { default_value = #default });
-                    } else if field.field_type == "char" {
-                        let c = default.chars().next().unwrap();
-                        arg_params.push(quote! { default_value = #c });
-                    } else {
-                        let default_lit: TokenStream =
-                            default.parse().expect("Invalid default value");
-                        arg_params.push(quote! { default_value_t = #default_lit });
+            match &field.variant {
+                GenericSpec::FieldSpec(f) => {
+                    if let Some(default) = &f.default {
+                        if field.field_type == "String"
+                            || field.field_type == PATH_BUF
+                            || is_optional
+                        {
+                            arg_params.push(quote! { default_value = #default });
+                        } else if field.field_type == "char" {
+                            let c = default.chars().next().unwrap();
+                            arg_params.push(quote! { default_value = #c });
+                        } else {
+                            let default_lit: TokenStream =
+                                default.parse().expect("Invalid default value");
+                            arg_params.push(quote! { default_value_t = #default_lit });
+                        }
                     }
-                }
-                if let Some(env) = &f.env {
-                    arg_params.push(quote! { env = #env });
-                }
-                if let Some(l) = &f.long_arg {
-                    arg_params.push(quote! { long = #l });
-                } else {
-                    arg_params.push(quote! { long = #id })
-                }
-                if let Some(s) = &f.short_arg {
-                    arg_params.push(quote! { short = #s });
-                }
+                    if let Some(env) = &f.env {
+                        arg_params.push(quote! { env = #env });
+                    }
+                    if let Some(l) = &f.long_arg {
+                        arg_params.push(quote! { long = #l });
+                    } else {
+                        arg_params.push(quote! { long = #id })
+                    }
+                    if let Some(s) = &f.short_arg {
+                        arg_params.push(quote! { short = #s });
+                    }
 
-                attributes.push(quote! { #[arg(#(#arg_params),*)] });
-            } else {
-                attributes.push(quote! { #[command(flatten)] });
+                    attributes.push(quote! { #[arg(#(#arg_params),*)] });
+                }
+                GenericSpec::EnumSpec(e) => {
+                    arg_params.push(quote! { value_enum });
+
+                    if let Some(env) = &e.env {
+                        arg_params.push(quote! { env = #env });
+                    }
+                    if let Some(l) = &e.long_arg {
+                        arg_params.push(quote! { long = #l });
+                    } else {
+                        arg_params.push(quote! { long = #id })
+                    }
+                    if let Some(s) = &e.short_arg {
+                        arg_params.push(quote! { short = #s });
+                    }
+
+                    attributes.push(quote! { #[arg(#(#arg_params),*)] });
+                }
+                GenericSpec::SubtypeSpec(_) => {
+                    attributes.push(quote! { #[command(flatten)] });
+                }
+                GenericSpec::ExternalSpec(_) => {
+                    attributes.push(quote! { #[command(flatten)] });
+                }
             }
 
             if is_optional {

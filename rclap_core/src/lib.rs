@@ -1,5 +1,7 @@
+pub mod ast;
+pub use ast::{EnumField, ExternalStruct, Field, GenericSpec, Spec, SubField};
 mod utils;
-use std::{collections::HashMap, ops::Deref, path::PathBuf};
+use std::{collections::HashMap, path::PathBuf};
 
 use crate::utils::{get_field_type, is_native_type};
 use serde::Deserialize;
@@ -24,75 +26,6 @@ impl ConfigSpec {
             .unwrap_or_else(|e| panic!("Failed to parse TOML config: {}", e));
         generic_config_spec.into()
     }
-}
-
-#[derive(serde::Deserialize, Clone, Debug)]
-pub struct Spec {
-    pub toml_tag_name: String,
-    pub id: String,
-    pub field_type: String,
-    pub doc: Option<String>,
-    pub variant: GenericSpec,
-    pub name: String,
-    pub optional: bool,
-}
-impl Spec {
-    pub fn new(
-        toml_tag_name: String,
-        id: String,
-        field_type: String,
-        doc: Option<String>,
-        variant: GenericSpec,
-    ) -> Self {
-        let name = match &variant {
-            GenericSpec::FieldSpec { .. } => toml_tag_name.clone(),
-            GenericSpec::SubtypeSpec { .. } => toml_tag_name.clone(),
-            GenericSpec::ExternalSpec { .. } => toml_tag_name.clone(),
-        };
-        let optional = match &variant {
-            GenericSpec::FieldSpec(f) => f.optional,
-            GenericSpec::SubtypeSpec { .. } => false,
-            GenericSpec::ExternalSpec(_) => false,
-        };
-        Spec {
-            toml_tag_name,
-            id,
-            field_type,
-            doc,
-            variant,
-            name,
-            optional,
-        }
-    }
-}
-#[derive(serde::Deserialize, Clone, Debug)]
-pub enum GenericSpec {
-    FieldSpec(Field),
-    SubtypeSpec(SubFields),
-    ExternalSpec(ExternalStruct),
-}
-
-#[derive(serde::Deserialize, Clone, Debug)]
-pub struct Field {
-    pub default: Option<String>,
-    pub env: Option<String>,
-    pub long_arg: Option<String>,
-    pub short_arg: Option<char>,
-    pub optional: bool,
-}
-
-#[derive(serde::Deserialize, Clone, Debug)]
-pub struct SubFields(pub Vec<Spec>);
-impl Deref for SubFields {
-    type Target = Vec<Spec>;
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-#[derive(serde::Deserialize, Clone, Debug)]
-pub struct ExternalStruct {
-    pub long_arg: Option<String>,
-    pub short_arg: Option<char>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -131,6 +64,7 @@ fn table_to_field_spec(
         .map(String::from);
 
     let doc = table.get("doc").and_then(|v| v.as_str()).map(String::from);
+    let enum_name = table.get("enum").and_then(|v| v.as_str()).map(String::from);
     let env = table.get("env").and_then(|v| v.as_str()).map(String::from);
     let long_arg = table.get("long").and_then(|v| v.as_str()).map(String::from);
     let short_arg = table
@@ -168,12 +102,21 @@ fn table_to_field_spec(
             optional,
         })
     } else if !subtype_fields.is_empty() {
-        GenericSpec::SubtypeSpec(SubFields(subtype_fields.clone()))
+        GenericSpec::SubtypeSpec(SubField(subtype_fields.clone()))
     } else {
-        GenericSpec::ExternalSpec(ExternalStruct {
-            long_arg,
-            short_arg,
-        })
+        match enum_name {
+            Some(enum_name) => GenericSpec::EnumSpec(EnumField {
+                env,
+                long_arg,
+                short_arg,
+                optional,
+                enum_name,
+            }),
+            None => GenericSpec::ExternalSpec(ExternalStruct {
+                long_arg,
+                short_arg,
+            }),
+        }
     };
 
     Spec::new(toml_tag_name, id, field_type, doc, variant)
@@ -182,6 +125,7 @@ fn table_to_field_spec(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::ast::GenericSpec;
     use crate::utils::to_pascal_case;
     use std::fs;
     use std::path::PathBuf;
@@ -204,7 +148,7 @@ mod tests {
                 panic!("Not a FieldSpec variant");
             }
         }
-        fn as_subtype_spec(&self) -> &SubFields {
+        fn as_subtype_spec(&self) -> &SubField {
             if let GenericSpec::SubtypeSpec(s) = &self.variant {
                 s
             } else {
