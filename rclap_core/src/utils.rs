@@ -13,8 +13,12 @@ pub(crate) fn get_field_type(
     field_name: String,
 ) -> String {
     let field_type = table.get("type").and_then(|v| v.as_str());
+    let enum_type = table.get("enum").and_then(|v| v.as_str());
     if let Some(ft) = field_type {
         return ft.to_string();
+    }
+    if let Some(et) = enum_type {
+        return et.to_string();
     }
     if has_sub {
         format!("{}Config", to_pascal_case(&field_name))
