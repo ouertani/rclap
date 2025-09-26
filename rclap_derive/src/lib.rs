@@ -69,7 +69,7 @@ fn generate_single_struct(struct_ident: &proc_macro2::Ident, fields: &[Spec]) ->
                             arg_params.push(quote! { default_value = #default });
                         } else if field.field_type == "char" {
                             let c = default.chars().next().unwrap();
-                            arg_params.push(quote! { default_value = #c });
+                            arg_params.push(quote! { default_value_t = #c });
                         } else {
                             let default_lit: TokenStream =
                                 default.parse().expect("Invalid default value");
