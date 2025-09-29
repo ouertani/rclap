@@ -51,11 +51,12 @@ fn generate_single_struct(struct_ident: &proc_macro2::Ident, fields: &[Spec]) ->
 
             let mut attributes = vec![];
 
+            let mut arg_params = vec![];
             if let Some(doc) = &field.doc {
                 attributes.push(quote! { #[doc = #doc] });
+                arg_params.push(quote! { help = #doc });
             }
 
-            let mut arg_params = vec![];
             let id = &field.id;
             let is_optional = field.optional;
             arg_params.push(quote! { id = #id });
