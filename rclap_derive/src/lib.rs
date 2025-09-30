@@ -61,6 +61,53 @@ fn generate_single_struct(struct_ident: &proc_macro2::Ident, fields: &[Spec]) ->
             let is_optional = field.optional;
             arg_params.push(quote! { id = #id });
             match &field.variant {
+                GenericSpec::VecSpec(f) => {
+                    if let Some(default) = &f.default {
+                        let default = default.as_array().unwrap();
+                        if field.field_type == "Vec<String>" || field.field_type == PATH_BUF {
+                            let default_strings: Vec<String> = default
+                                .iter()
+                                .map(|v| v.as_str().unwrap().to_string())
+                                .collect();
+                            let default_tokens = default_strings.iter().map(|s| {
+                                quote! { #s.to_string() }
+                            });
+                            arg_params
+                                .push(quote! { default_values_t = vec![#(#default_tokens),*] });
+                        } else if field.field_type == "Vec<char>" {
+                            let default_strings: Vec<char> = default
+                                .iter()
+                                .map(|v| v.as_str().unwrap().chars().next().unwrap())
+                                .collect();
+                            let default_tokens = default_strings.iter().map(|s| {
+                                quote! { #s }
+                            });
+                            arg_params
+                                .push(quote! { default_values_t = vec![#(#default_tokens),*] });
+                        } else {
+                            let default_strings: Vec<i64> =
+                                default.iter().map(|v| v.as_integer().unwrap()).collect();
+                            let default_tokens = default_strings.iter().map(|s| {
+                                quote! { #s }
+                            });
+                            arg_params
+                                .push(quote! { default_values_t = vec![#(#default_tokens),*] });
+                        }
+                    }
+                    if let Some(env) = &f.env {
+                        arg_params.push(quote! { env = #env });
+                    }
+                    if let Some(l) = &f.long_arg {
+                        arg_params.push(quote! { long = #l });
+                    } else {
+                        arg_params.push(quote! { long = #id })
+                    }
+                    if let Some(s) = &f.short_arg {
+                        arg_params.push(quote! { short = #s });
+                    }
+
+                    attributes.push(quote! { #[arg(#(#arg_params),*)] });
+                }
                 GenericSpec::FieldSpec(f) => {
                     if let Some(default) = &f.default {
                         if field.field_type == "String"

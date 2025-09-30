@@ -3,7 +3,7 @@ pub use ast::{EnumField, ExternalStruct, Field, GenericSpec, Spec, SubField};
 mod utils;
 use std::{collections::HashMap, path::PathBuf};
 
-use crate::utils::{get_field_type, is_native_type};
+use crate::{ast::VecField, utils::get_field_type};
 use serde::Deserialize;
 
 pub const PATH_BUF: &str = "std::path::PathBuf";
@@ -58,11 +58,6 @@ fn table_to_field_spec(
     table: &toml::value::Table,
     parent_id: Option<String>,
 ) -> Spec {
-    let default = table
-        .get("default")
-        .and_then(|v| v.as_str())
-        .map(String::from);
-
     let doc = table.get("doc").and_then(|v| v.as_str()).map(String::from);
     let enum_name = table.get("enum").and_then(|v| v.as_str()).map(String::from);
     let env = table.get("env").and_then(|v| v.as_str()).map(String::from);
@@ -93,7 +88,22 @@ fn table_to_field_spec(
         .get("optional")
         .and_then(|v| v.as_bool())
         .unwrap_or(false);
-    let variant = if subtype_fields.is_empty() && is_native_type(&field_type) {
+    if field_type.is_vec {
+        let default = table.get("default").cloned();
+        let variant = GenericSpec::VecSpec(VecField {
+            default,
+            env,
+            long_arg,
+            short_arg,
+            optional,
+        });
+        return Spec::new(toml_tag_name, id, field_type.type_name, doc, variant);
+    }
+    let default = table
+        .get("default")
+        .and_then(|v| v.as_str())
+        .map(String::from);
+    let variant = if subtype_fields.is_empty() && field_type.is_native {
         GenericSpec::FieldSpec(Field {
             default,
             env,
@@ -119,7 +129,7 @@ fn table_to_field_spec(
         }
     };
 
-    Spec::new(toml_tag_name, id, field_type, doc, variant)
+    Spec::new(toml_tag_name, id, field_type.type_name, doc, variant)
 }
 
 #[cfg(test)]
