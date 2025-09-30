@@ -1,5 +1,5 @@
 array = { type = "[char]", default = ['A', 'B', 'C'], env = "ABC" }
-array2 = { type = "[i64]", default = [1, 2, 3], env = "ABC" }
+array2 = { type = "[int]", default = [1, 2, 3], env = "AB" }
 # enumeration = { type = "char", value = ['A', 'B', 'C'], env = "ABC" }
-port = { type = "u16", default = "9080" }
-id = { type = "u16", default = "2" }
+port = { type = "int", default = "9080" }
+id = { type = "int", default = "2" }

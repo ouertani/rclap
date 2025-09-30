@@ -1,6 +1,6 @@
-small_int = { type = "u16", default = "80" }
-int = { type = "u32", default = "8000" }
-float = { type = "f32", default = "90.80" }
+small_int = { type = "int", default = "80" }
+int = { type = "int", default = "8000" }
+float = { type = "float", default = "90.80" }
 boolean = { type = "bool", default = "true" }
-string = { type = "String", default = "string_value" }
-path = { type = "std::path::PathBuf", default = "." }
+string = { type = "string", default = "string_value" }
+path = { type = "path", default = "." }

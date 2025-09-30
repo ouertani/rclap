@@ -1,6 +1,6 @@
 use std::{env, path::Path};
 
-use proc_macro2::TokenStream;
+use proc_macro2::{Literal, TokenStream};
 use quote::quote;
 use rclap_core::*;
 #[proc_macro_attribute]
@@ -84,18 +84,36 @@ fn generate_single_struct(struct_ident: &proc_macro2::Ident, fields: &[Spec]) ->
                             });
                             arg_params
                                 .push(quote! { default_values_t = vec![#(#default_tokens),*] });
-                        } else {
-                            let default_strings: Vec<i64> =
+                        } else if field.field_type == "Vec<i64>" {
+                            let defaults: Vec<i64> =
                                 default.iter().map(|v| v.as_integer().unwrap()).collect();
-                            let default_tokens = default_strings.iter().map(|s| {
+                            let default_tokens = defaults.iter().map(|s| {
+                                let lit = Literal::i64_unsuffixed(*s);
+                                quote! { #lit }
+                            });
+                            arg_params.push(quote! { default_values_t = [#(#default_tokens),*] });
+                        } else if field.field_type == "Vec<f64>" {
+                            let defaults: Vec<f64> =
+                                default.iter().map(|v| v.as_float().unwrap()).collect();
+                            let default_tokens = defaults.iter().map(|s| {
+                                let lit = Literal::f64_unsuffixed(*s);
+                                quote! { #lit }
+                            });
+                            arg_params.push(quote! { default_values_t = [#(#default_tokens),*] });
+                        } else if field.field_type == "Vec<bool>" {
+                            let defaults: Vec<bool> =
+                                default.iter().map(|v| v.as_bool().unwrap()).collect();
+                            let default_tokens = defaults.iter().map(|s| {
                                 quote! { #s }
                             });
-                            arg_params
-                                .push(quote! { default_values_t = vec![#(#default_tokens),*] });
+                            arg_params.push(quote! { default_values_t = [#(#default_tokens),*] });
+                        } else {
+                            panic!("Unsupported Vec default type");
                         }
                     }
                     if let Some(env) = &f.env {
                         arg_params.push(quote! { env = #env });
+                        arg_params.push(quote! { value_delimiter = ',' });
                     }
                     if let Some(l) = &f.long_arg {
                         arg_params.push(quote! { long = #l });

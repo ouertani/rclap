@@ -178,7 +178,7 @@ mod tests {
     #[test]
     fn test_simple_field_parsing() {
         let toml_content = r#"
-port = { type = "u16", default = "8080", doc = "Server port", env = "PORT" }
+port = { type = "int", default = "8080", doc = "Server port", env = "PORT" }
 name = { type = "String", default = "test", long = "name", short = "n" }
 "#;
         let config_spec = ConfigSpec::load_toml_config(toml_content);
@@ -188,7 +188,7 @@ name = { type = "String", default = "test", long = "name", short = "n" }
         let port_field = config_spec.get_field("port").unwrap();
 
         assert_eq!(port_field.name, "port");
-        assert_eq!(port_field.field_type, "u16");
+        assert_eq!(port_field.field_type, "i64");
         assert_eq!(port_field.doc, Some("Server port".to_string()));
         assert_eq!(port_field.id, "port");
         let port = port_field.as_field_spec();
@@ -219,12 +219,11 @@ name = { type = "String", default = "test", long = "name", short = "n" }
         doc = "Database configuration"
 
         [database.host]
-        type = "String"
         default = "localhost"
         env = "DB_HOST"
         
         [database.port]
-        type = "u16"
+        type = "int"
         default = "5432"
         env = "DB_PORT"
         "#;
@@ -259,7 +258,7 @@ name = { type = "String", default = "test", long = "name", short = "n" }
         // Test port field
         let port_field = &fields[1];
         assert_eq!(port_field.name, "port");
-        assert_eq!(port_field.field_type, "u16");
+        assert_eq!(port_field.field_type, "i64");
         assert_eq!(port_field.id, "database.port");
 
         let port = port_field.as_field_spec();
@@ -280,12 +279,12 @@ name = { type = "String", default = "test", long = "name", short = "n" }
         
             [app.server.http]
             type = "HttpConfig"
-            port = { type = "u16", default = "8080" }
-            host = { type = "String", default = "localhost" }
+            port = { type = "int", default = "8080" }
+            host = {  default = "localhost" }
             
             [app.server.tls]
             type = "TlsConfig"
-            cert = { type = "String", env = "TLS_CERT" }
+            cert = {  env = "TLS_CERT" }
         "#;
         let config_spec = ConfigSpec::load_toml_config(toml_content);
 
@@ -320,7 +319,7 @@ name = { type = "String", default = "test", long = "name", short = "n" }
     #[test]
     fn test_optional_fields() {
         let toml_content = r#"
-        port = { type = "u16", default = "8080", optional = true }
+        port = { type = "int", default = "8080", optional = true }
         host = { type = "String", env = "HOST" }
         debug = { type = "bool", optional = false }
         "#;
@@ -341,7 +340,7 @@ name = { type = "String", default = "test", long = "name", short = "n" }
     #[test]
     fn test_short_arg_validation() {
         let toml_content = r#"
-port = { type = "u16", short = "p" }
+port = { type = "int", short = "p" }
 host = { type = "String", short = "h" }
 invalid_short = { type = "String", short = "invalid" }
 empty_short = { type = "String", short = "" }
@@ -420,20 +419,20 @@ host = { type = "String", default = "localhost" }
             toml::Value::String("CustomType".to_string()),
         );
         assert_eq!(
-            get_field_type(&table, false, "test".to_string()),
+            get_field_type(&table, false, "test".to_string()).type_name,
             "CustomType"
         );
 
         // Test auto-generated type with subfields
         table.clear();
         assert_eq!(
-            get_field_type(&table, true, "redis_config".to_string()),
+            get_field_type(&table, true, "redis_config".to_string()).type_name,
             "Redis_configConfig"
         );
 
         // Test default string type
         assert_eq!(
-            get_field_type(&table, false, "simple".to_string()),
+            get_field_type(&table, false, "simple".to_string()).type_name,
             "String"
         );
     }
@@ -452,7 +451,7 @@ host = { type = "String", default = "localhost" }
     fn test_complex_mixed_structure() {
         let toml_content = r#"
                                             # Simple top-level fields
-                                            app_name = { type = "String", default = "MyApp", env = "APP_NAME" }
+                                            app_name = { type = "string", default = "MyApp", env = "APP_NAME" }
                                             debug = { type = "bool", default = "false", short = "d" }
 
                                             # Nested configuration
@@ -462,19 +461,19 @@ host = { type = "String", default = "localhost" }
 
                                             [database.primary]
                                             type = "ConnectionConfig"
-                                            url = { type = "String", env = "DB_PRIMARY_URL", doc = "Primary DB URL" }
-                                            pool_size = { type = "u32", default = "10" }
+                                            url = { type = "string", env = "DB_PRIMARY_URL", doc = "Primary DB URL" }
+                                            pool_size = { type = "int", default = "10" }
                                             
                                             [database.replica]
                                             type = "ConnectionConfig" 
-                                            url = { type = "String", env = "DB_REPLICA_URL", optional = true }
-                                            pool_size = { type = "u32", default = "5" }
+                                            url = { type = "string", env = "DB_REPLICA_URL", optional = true }
+                                            pool_size = { type = "int", default = "5" }
 
                                             # Another top-level section  
                                             [logging]
                                             doc = "Logging configuration"
-                                            level = { type = "String", default = "info", env = "LOG_LEVEL", short = "l" }
-                                            file = { type = "String", env = "LOG_FILE", optional = true }
+                                            level = { type = "string", default = "info", env = "LOG_LEVEL", short = "l" }
+                                            file = { type = "string", env = "LOG_FILE", optional = true }
                                             "#;
         let config_spec = ConfigSpec::load_toml_config(toml_content);
 
