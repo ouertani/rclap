@@ -1,6 +1,5 @@
-port = { type = "u16", default = "9080" }
-id = { type = "u16", default = "2" }
-[redis]
-doc = "Redis configuration"
-url = { default = "redis://localhost:6379", doc = "Redis connection URL", env = "REDIS_URL" }
-pool_size = { type = "u32", default = "10", doc = "Connection pool size", env = "REDIS_POOL_SIZE" }
+array = { type = "[char]", default = ['A', 'B', 'C'], env = "ABC" }
+array2 = { type = "[int]", default = [1, 2, 3], env = "AB" }
+# enumeration = { type = "char", value = ['A', 'B', 'C'], env = "ABC" }
+port = { type = "int", default = "9080" }
+id = { type = "int", default = "2" }

@@ -7,7 +7,7 @@
 //! 1- Create a TOML File: Define your configuration settings in a simple TOML file, specifying the argument name, type, default value, and associated environment variable.
 //!
 //! ```toml
-//! port = { type = "u16", default = "8080", doc = "Server port number", env = "PORT" }
+//! port = { type = "int", default = "8080", doc = "Server port number", env = "PORT" }
 //! ip = {  default = "localhost", doc = "connection URL", env = "URL" }
 //! ```
 //!

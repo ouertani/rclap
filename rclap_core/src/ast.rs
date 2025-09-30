@@ -1,5 +1,7 @@
 use std::ops::Deref;
 
+use toml::Value;
+
 #[derive(serde::Deserialize, Clone, Debug)]
 pub struct Spec {
     pub toml_tag_name: String,
@@ -16,6 +18,7 @@ pub enum GenericSpec {
     SubtypeSpec(SubField),
     ExternalSpec(ExternalStruct),
     EnumSpec(EnumField),
+    VecSpec(VecField),
 }
 
 #[derive(serde::Deserialize, Clone, Debug)]
@@ -48,7 +51,14 @@ pub struct EnumField {
     pub optional: bool,
     pub enum_name: String,
 }
-
+#[derive(serde::Deserialize, Clone, Debug)]
+pub struct VecField {
+    pub default: Option<Value>,
+    pub env: Option<String>,
+    pub long_arg: Option<String>,
+    pub short_arg: Option<char>,
+    pub optional: bool,
+}
 impl Spec {
     pub fn new(
         toml_tag_name: String,
@@ -63,6 +73,7 @@ impl Spec {
             GenericSpec::SubtypeSpec { .. } => false,
             GenericSpec::ExternalSpec(_) => false,
             GenericSpec::EnumSpec(f) => f.optional,
+            GenericSpec::VecSpec(f) => f.optional,
         };
         Spec {
             toml_tag_name,
