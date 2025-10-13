@@ -131,6 +131,7 @@ fn table_to_field_spec(
                 optional,
                 enum_name,
                 variants: enum_values.iter().map(|s| s.to_string()).collect(),
+                default,
             }),
             None => GenericSpec::ExternalSpec(ExternalStruct {
                 long_arg,
