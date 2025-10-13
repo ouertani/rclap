@@ -60,6 +60,15 @@ fn table_to_field_spec(
 ) -> Spec {
     let doc = table.get("doc").and_then(|v| v.as_str()).map(String::from);
     let enum_name = table.get("enum").and_then(|v| v.as_str()).map(String::from);
+    let enum_values = table
+        .get("variants")
+        .and_then(|v| v.as_array())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|val| val.as_str())
+                .collect::<Vec<&str>>()
+        })
+        .unwrap_or_default();
     let env = table.get("env").and_then(|v| v.as_str()).map(String::from);
     let long_arg = table.get("long").and_then(|v| v.as_str()).map(String::from);
     let short_arg = table
@@ -121,6 +130,7 @@ fn table_to_field_spec(
                 short_arg,
                 optional,
                 enum_name,
+                variants: enum_values.iter().map(|s| s.to_string()).collect(),
             }),
             None => GenericSpec::ExternalSpec(ExternalStruct {
                 long_arg,

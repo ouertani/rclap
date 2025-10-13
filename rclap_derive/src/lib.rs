@@ -205,16 +205,53 @@ fn generate_single_struct(struct_ident: &proc_macro2::Ident, fields: &[Spec]) ->
     }
 }
 
-fn collect_subtypes(fields: &[Spec], structs: &mut Vec<TokenStream>) {
+fn collect_subtypes(fields: &[Spec], items: &mut Vec<TokenStream>) {
     for field in fields {
-        if let GenericSpec::SubtypeSpec(subtype_spec) = &field.variant {
-            let struct_name = &field.field_type;
-
-            let struct_ident = syn::Ident::new(struct_name, proc_macro2::Span::call_site());
-            let subtype_struct = generate_single_struct(&struct_ident, subtype_spec);
-            structs.push(subtype_struct);
-
-            collect_subtypes(subtype_spec, structs);
+        match &field.variant {
+            GenericSpec::SubtypeSpec(subtype_spec) => {
+                let struct_name = &field.field_type;
+                let struct_ident = syn::Ident::new(struct_name, proc_macro2::Span::call_site());
+                let subtype_struct = generate_single_struct(&struct_ident, subtype_spec);
+                items.push(subtype_struct);
+                collect_subtypes(subtype_spec, items);
+            }
+            GenericSpec::EnumSpec(enum_spec) if enum_spec.variants.is_empty() => {}
+            GenericSpec::EnumSpec(enum_spec) => {
+                let enum_name = &field.field_type;
+                let enum_ident = syn::Ident::new(enum_name, proc_macro2::Span::call_site());
+                let enum_item = generate_enum(&enum_ident, enum_spec);
+                items.push(enum_item);
+            }
+            _ => {}
         }
     }
+}
+fn generate_enum(enum_ident: &proc_macro2::Ident, enum_spec: &EnumField) -> TokenStream {
+    let variants: Vec<TokenStream> = enum_spec
+        .variants
+        .iter()
+        .map(|variant_name| {
+            let variant_ident = syn::Ident::new(variant_name, proc_macro2::Span::call_site());
+
+            quote! {
+                #variant_ident,
+            }
+        })
+        .collect();
+
+    let derives = quote! {
+        #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
+    };
+    //TODO: make rename_all configurable
+    let enum_attributes = quote! {
+        #[clap(rename_all = "verbatim")]
+    };
+
+    quote! {
+            #derives
+    #enum_attributes
+            pub enum #enum_ident {
+                #(#variants)*
+            }
+        }
 }
