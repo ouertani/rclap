@@ -35,7 +35,6 @@ pub(crate) fn get_field_type(
                     type_name: format!("Vec<{}>", to_type(inner_type)),
                     is_native: true,
                     is_vec: true,
-                    is_enum: false,
                 };
             } else {
                 // TODO:
@@ -47,7 +46,6 @@ pub(crate) fn get_field_type(
             type_name: ft.to_string(),
             is_native: is_native_type(&ft),
             is_vec: false,
-            is_enum: false,
         };
     }
     if let Some(et) = enum_type {
@@ -55,7 +53,6 @@ pub(crate) fn get_field_type(
             type_name: et.to_string(),
             is_native: false,
             is_vec: false,
-            is_enum: true,
         };
     }
     if has_sub {
@@ -63,14 +60,12 @@ pub(crate) fn get_field_type(
             type_name: format!("{}Config", to_pascal_case(&field_name)),
             is_native: false,
             is_vec: false,
-            is_enum: false,
         }
     } else {
         RawField {
             type_name: "String".to_string(),
             is_native: true,
             is_vec: false,
-            is_enum: false,
         }
     }
 }
@@ -79,7 +74,6 @@ pub(crate) struct RawField {
     pub type_name: String,
     pub is_native: bool,
     pub is_vec: bool,
-    pub is_enum: bool,
 }
 pub(crate) fn to_pascal_case(s: &str) -> String {
     let mut chars = s.chars();
