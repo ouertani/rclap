@@ -158,7 +158,14 @@ fn generate_single_struct(struct_ident: &proc_macro2::Ident, fields: &[Spec]) ->
                 }
                 GenericSpec::EnumSpec(e) => {
                     arg_params.push(quote! { value_enum });
-
+                    if let Some(default) = &e.default {
+                        let field_type_ident: proc_macro2::Ident =
+                            syn::parse_str(&field.field_type).expect("Invalid field type");
+                        let default_variant =
+                            syn::Ident::new(default, proc_macro2::Span::call_site());
+                        arg_params
+                            .push(quote! { default_value_t = #field_type_ident::#default_variant });
+                    }
                     if let Some(env) = &e.env {
                         arg_params.push(quote! { env = #env });
                     }

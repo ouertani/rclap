@@ -51,6 +51,7 @@ pub struct EnumField {
     pub optional: bool,
     pub enum_name: String,
     pub variants: Vec<String>,
+    pub default: Option<String>,
 }
 #[derive(serde::Deserialize, Clone, Debug)]
 pub struct VecField {
