@@ -1,9 +1,15 @@
 use std::path::PathBuf;
 
 use clap::Parser;
+use clap::ValueEnum;
 use rclap::config;
 use serial_test::serial;
-
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
+enum MyEnum {
+    A,
+    B,
+    C,
+}
 #[test]
 #[serial]
 fn test_basic_file() {
