@@ -5,4 +5,4 @@ enum1 = { enum = "Enum1", variants = [
   "B",
   "C",
 ], default = "A", doc = "An example enum", env = "ENUM1" }
-enum2 = { enum = "MyEnum", doc = "An example enum", env = "ENUM2", default = "C" }
+enum2 = { enum = "crate::MyEnum", doc = "An example enum", env = "ENUM2", default = "C" }
