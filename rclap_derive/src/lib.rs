@@ -37,7 +37,7 @@ fn generate_struct(
 
     collect_subtypes(&config_spec.fields, &mut all_structs);
     let private_mod_name = syn::Ident::new(
-        &format!("__config_impl_{}", struct_name.to_string().to_lowercase()),
+        &struct_name.to_string().to_lowercase().to_string(),
         proc_macro2::Span::call_site(),
     );
     quote! {
