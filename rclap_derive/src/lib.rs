@@ -36,9 +36,35 @@ fn generate_struct(
     all_structs.push(main_struct);
 
     collect_subtypes(&config_spec.fields, &mut all_structs);
-
+    let private_mod_name = syn::Ident::new(
+        &format!("__config_impl_{}", struct_name.to_string().to_lowercase()),
+        proc_macro2::Span::call_site(),
+    );
     quote! {
-        #(#all_structs)*
+
+        mod #private_mod_name {
+            use clap::{Parser, ValueEnum};
+            #(#all_structs)*
+
+        impl #struct_name {
+            pub fn parse() -> Self {
+                <Self as Parser>::parse()
+            }
+
+            pub fn try_parse() -> Result<Self, clap::Error> {
+                <Self as Parser>::try_parse()
+            }
+
+            pub fn parse_from<I, T>(itr: I) -> Self
+            where
+                I: IntoIterator<Item = T>,
+                T: Into<std::ffi::OsString> + Clone,
+            {
+                <Self as Parser>::parse_from(itr)
+            }}
+        }
+
+       pub use #private_mod_name::#struct_name;
     }
 }
 
@@ -159,12 +185,25 @@ fn generate_single_struct(struct_ident: &proc_macro2::Ident, fields: &[Spec]) ->
                 GenericSpec::EnumSpec(e) => {
                     arg_params.push(quote! { value_enum });
                     if let Some(default) = &e.default {
-                        let field_type_ident: proc_macro2::Ident =
-                            syn::parse_str(&field.field_type).expect("Invalid field type");
-                        let default_variant =
-                            syn::Ident::new(default, proc_macro2::Span::call_site());
-                        arg_params
-                            .push(quote! { default_value_t = #field_type_ident::#default_variant });
+                        if field.field_type.contains("::") {
+                            let enum_name = &field.field_type;
+                            let field_type_ident: proc_macro2::TokenStream =
+                                enum_name.parse().expect("Invalid enum path");
+                            let default_variant: proc_macro2::TokenStream =
+                                default.parse().expect("Invalid enum path");
+
+                            arg_params.push(
+                                quote! { default_value_t = #field_type_ident::#default_variant },
+                            );
+                        } else {
+                            let field_type_ident: proc_macro2::Ident =
+                                syn::parse_str(&field.field_type).expect("Invalid field type");
+                            let default_variant =
+                                syn::Ident::new(default, proc_macro2::Span::call_site());
+                            arg_params.push(
+                                quote! { default_value_t = #field_type_ident::#default_variant },
+                            );
+                        }
                     }
                     if let Some(env) = &e.env {
                         arg_params.push(quote! { env = #env });
@@ -225,6 +264,7 @@ fn collect_subtypes(fields: &[Spec], items: &mut Vec<TokenStream>) {
             GenericSpec::EnumSpec(enum_spec) if enum_spec.variants.is_empty() => {}
             GenericSpec::EnumSpec(enum_spec) => {
                 let enum_name = &field.field_type;
+
                 let enum_ident = syn::Ident::new(enum_name, proc_macro2::Span::call_site());
                 let enum_item = generate_enum(&enum_ident, enum_spec);
                 items.push(enum_item);
