@@ -40,9 +40,10 @@ fn generate_struct(
         &struct_name.to_string().to_lowercase().to_string(),
         proc_macro2::Span::call_site(),
     );
+
     quote! {
 
-        mod #private_mod_name {
+      pub mod #private_mod_name {
             use clap::{Parser, ValueEnum};
             #(#all_structs)*
 
@@ -65,6 +66,7 @@ fn generate_struct(
         }
 
        pub use #private_mod_name::#struct_name;
+        pub use #private_mod_name::*;
     }
 }
 
