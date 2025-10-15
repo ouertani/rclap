@@ -1,6 +1,6 @@
 [package]
 name = "rclap"
-version = "0.1.19"
+version = "0.2.0"
 edition = "2024"
 authors = ["Slim Ouertani"]
 categories = ["config"]
@@ -12,4 +12,4 @@ readme = "../README.md"
 repository = "https://github.com/ouertani/rclap"
 
 [dependencies]
-rclap_derive = { path = "../rclap_derive", version = "0.1.19" }
+rclap_derive = { path = "../rclap_derive", version = "0.2.0" }
