@@ -1,4 +1,3 @@
-use clap::{Parser, ValueEnum};
 use rclap::config;
 
 #[config]
@@ -9,7 +8,7 @@ fn main() {
     println!("Config: {:#?}", config);
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, clap::ValueEnum)]
 enum MyEnum {
     A,
     B,

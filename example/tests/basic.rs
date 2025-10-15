@@ -1,6 +1,5 @@
 use std::path::PathBuf;
 
-use clap::Parser;
 use clap::ValueEnum;
 use rclap::config;
 use serial_test::serial;

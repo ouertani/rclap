@@ -14,9 +14,6 @@
 //! 2- Apply the Macro: Use the #[config] macro on an empty struct in your Rust code. The macro reads the TOML file and generates the complete clap::Parser implementation for you.
 //!
 //! ```text
-//! use clap::Parser;
-//! use rclap::config;
-//!
 //! #[config]
 //! struct MyConfig;
 //!
