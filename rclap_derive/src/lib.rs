@@ -1,34 +1,29 @@
-use std::{env, path::Path};
-
+mod config_attr;
 use proc_macro2::{Literal, TokenStream};
 use quote::quote;
 use rclap_core::*;
+use syn::parse_macro_input;
+
+use crate::config_attr::ConfigAttr;
 #[proc_macro_attribute]
 pub fn config(
     args: proc_macro::TokenStream,
     input: proc_macro::TokenStream,
 ) -> proc_macro::TokenStream {
-    let config_path = if args.is_empty() {
-        "config.toml".to_string()
-    } else {
-        args.to_string().trim_matches('"').to_string()
-    };
-    let manifest_dir = env::var("CARGO_MANIFEST_DIR")
-        .expect("CARGO_MANIFEST_DIR not set - this should be available during compilation");
-
-    let full_path = Path::new(&manifest_dir).join(config_path);
-    let input_parsed = syn::parse_macro_input!(input as syn::ItemStruct);
+    let config_attr = parse_macro_input!(args as ConfigAttr);
+    let input_parsed = parse_macro_input!(input as syn::ItemStruct);
     let struct_name = &input_parsed.ident;
 
-    let config_spec: ConfigSpec = ConfigSpec::from_file(&full_path)
+    let config_spec: ConfigSpec = ConfigSpec::from_file(&config_attr.full_path())
         .unwrap_or_else(|e| panic!("Failed to parse Toml config: {}", e));
 
-    generate_struct(config_spec, struct_name).into()
+    generate_struct(config_spec, struct_name, &config_attr).into()
 }
 
 fn generate_struct(
     config_spec: ConfigSpec,
     struct_name: &proc_macro2::Ident,
+    config_attr: &ConfigAttr,
 ) -> proc_macro2::TokenStream {
     let mut all_structs = Vec::new();
 
@@ -40,7 +35,13 @@ fn generate_struct(
         &struct_name.to_string().to_lowercase().to_string(),
         proc_macro2::Span::call_site(),
     );
-
+    let export = if config_attr.export {
+        quote! {
+           pub use #private_mod_name::*;
+        }
+    } else {
+        quote! {}
+    };
     quote! {
 
       pub mod #private_mod_name {
@@ -66,7 +67,7 @@ fn generate_struct(
         }
 
        pub use #private_mod_name::#struct_name;
-        pub use #private_mod_name::*;
+       #export
     }
 }
 
