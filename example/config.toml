@@ -1,8 +1,9 @@
 ip = { default = "localhost", doc = "connection URL", env = "IP" }
-port = { type = "int", default = "8080", doc = "Server port number", env = "PORT" }
+port = { type = "usize", default = "8080", doc = "Server port number", env = "PORT" }
 enum1 = { enum = "Enum1", variants = [
   "A",
   "B",
   "C",
 ], default = "A", doc = "An example enum", env = "ENUM1" }
 enum2 = { enum = "crate::MyEnum", doc = "An example enum", env = "ENUM2", default = "C" }
+

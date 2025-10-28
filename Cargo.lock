@@ -373,6 +373,7 @@ checksum = "69cdb34c158ceb288df11e18b4bd39de994f6657d83847bdffdbd7f346754b0f"
 name = "rclap"
 version = "0.3.0"
 dependencies = [
+ "clap",
  "rclap_derive",
 ]
 
@@ -389,6 +390,7 @@ dependencies = [
 name = "rclap_derive"
 version = "0.3.0"
 dependencies = [
+ "clap",
  "proc-macro2",
  "quote",
  "rclap_core",
