@@ -13,3 +13,4 @@ repository = "https://github.com/ouertani/rclap"
 
 [dependencies]
 rclap_derive = { path = "../rclap_derive", version = "0.3.0" }
+clap = { version = "4.5", features = ["env", "derive"] }

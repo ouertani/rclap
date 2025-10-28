@@ -1,8 +1,9 @@
 use crate::PATH_BUF;
 
-pub const NATIVE_TYPES: [&str; 6] = ["int", "float", "bool", "string", "path", "char"];
+pub const NATIVE_TYPES: [&str; 7] = ["usize", "int", "float", "bool", "string", "path", "char"];
 fn is_native_type(ty: &str) -> bool {
     NATIVE_TYPES.contains(&ty.to_lowercase().as_str())
+        || ty == "usize"
         || ty == "i64"
         || ty == PATH_BUF
         || ty == "f64"
@@ -11,6 +12,7 @@ fn is_native_type(ty: &str) -> bool {
 fn to_type(ty: &str) -> String {
     let ty_lower = ty.to_lowercase();
     match ty_lower.as_str() {
+        "usize" => "usize".to_string(),
         "int" => "i64".to_string(),
         "float" => "f64".to_string(),
         "bool" => "bool".to_string(),

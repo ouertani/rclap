@@ -136,6 +136,15 @@ fn generate_single_struct(struct_ident: &proc_macro2::Ident, fields: &[Spec]) ->
                                 quote! { #s }
                             });
                             arg_params.push(quote! { default_values_t = [#(#default_tokens),*] });
+                        } else if field.field_type == "Vec<usize>" {
+                            let defaults: Vec<usize> = default
+                                .iter()
+                                .map(|v| v.as_integer().unwrap().try_into().unwrap())
+                                .collect();
+                            let default_tokens = defaults.iter().map(|s| {
+                                quote! { #s }
+                            });
+                            arg_params.push(quote! { default_values_t = [#(#default_tokens),*] });
                         } else {
                             panic!("Unsupported Vec default type");
                         }
