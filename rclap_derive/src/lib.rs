@@ -27,10 +27,18 @@ fn generate_struct(
 ) -> proc_macro2::TokenStream {
     let mut all_structs = Vec::new();
 
-    let main_struct = generate_single_struct(struct_name, &config_spec.fields);
+    let main_struct = generate_single_struct(
+        struct_name,
+        &config_spec.fields,
+        config_attr.extra_derives.clone(),
+    );
     all_structs.push(main_struct);
 
-    collect_subtypes(&config_spec.fields, &mut all_structs);
+    collect_subtypes(
+        &config_spec.fields,
+        &mut all_structs,
+        config_attr.extra_derives.clone(),
+    );
     let private_mod_name = syn::Ident::new(
         &struct_name.to_string().to_lowercase().to_string(),
         proc_macro2::Span::call_site(),
@@ -71,7 +79,11 @@ fn generate_struct(
     }
 }
 
-fn generate_single_struct(struct_ident: &proc_macro2::Ident, fields: &[Spec]) -> TokenStream {
+fn generate_single_struct(
+    struct_ident: &proc_macro2::Ident,
+    fields: &[Spec],
+    extra_derives: Vec<syn::Path>,
+) -> TokenStream {
     let field_definitions: Vec<TokenStream> = fields
         .iter()
         .map(|field| {
@@ -254,38 +266,50 @@ fn generate_single_struct(struct_ident: &proc_macro2::Ident, fields: &[Spec]) ->
         .collect();
 
     let derives = quote! { #[derive(Debug, Clone, PartialEq,  Parser)] };
-
+    let extra_derives = if extra_derives.is_empty() {
+        quote! {}
+    } else {
+        quote! {
+            #[derive(#(#extra_derives),*)]
+        }
+    };
     quote! {
         #derives
+        #extra_derives
         pub struct #struct_ident {
             #(#field_definitions)*
         }
     }
 }
 
-fn collect_subtypes(fields: &[Spec], items: &mut Vec<TokenStream>) {
+fn collect_subtypes(fields: &[Spec], items: &mut Vec<TokenStream>, extra_derives: Vec<syn::Path>) {
     for field in fields {
         match &field.variant {
             GenericSpec::SubtypeSpec(subtype_spec) => {
                 let struct_name = &field.field_type;
                 let struct_ident = syn::Ident::new(struct_name, proc_macro2::Span::call_site());
-                let subtype_struct = generate_single_struct(&struct_ident, subtype_spec);
+                let subtype_struct =
+                    generate_single_struct(&struct_ident, subtype_spec, extra_derives.clone());
                 items.push(subtype_struct);
-                collect_subtypes(subtype_spec, items);
+                collect_subtypes(subtype_spec, items, extra_derives.clone());
             }
             GenericSpec::EnumSpec(enum_spec) if enum_spec.variants.is_empty() => {}
             GenericSpec::EnumSpec(enum_spec) => {
                 let enum_name = &field.field_type;
 
                 let enum_ident = syn::Ident::new(enum_name, proc_macro2::Span::call_site());
-                let enum_item = generate_enum(&enum_ident, enum_spec);
+                let enum_item = generate_enum(&enum_ident, enum_spec, extra_derives.clone());
                 items.push(enum_item);
             }
             _ => {}
         }
     }
 }
-fn generate_enum(enum_ident: &proc_macro2::Ident, enum_spec: &EnumField) -> TokenStream {
+fn generate_enum(
+    enum_ident: &proc_macro2::Ident,
+    enum_spec: &EnumField,
+    extra_derives: Vec<syn::Path>,
+) -> TokenStream {
     let variants: Vec<TokenStream> = enum_spec
         .variants
         .iter()
@@ -301,6 +325,13 @@ fn generate_enum(enum_ident: &proc_macro2::Ident, enum_spec: &EnumField) -> Toke
     let derives = quote! {
         #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
     };
+    let extra_derives = if extra_derives.is_empty() {
+        quote! {}
+    } else {
+        quote! {
+            #[derive(#(#extra_derives),*)]
+        }
+    };
     //TODO: make rename_all configurable
     let enum_attributes = quote! {
         #[clap(rename_all = "verbatim")]
@@ -308,6 +339,7 @@ fn generate_enum(enum_ident: &proc_macro2::Ident, enum_spec: &EnumField) -> Toke
 
     quote! {
             #derives
+        #extra_derives
     #enum_attributes
             pub enum #enum_ident {
                 #(#variants)*

@@ -1,6 +1,6 @@
 use rclap::config;
 
-#[config]
+#[config(derives=[serde::Serialize, serde::Deserialize])]
 struct MyConfig;
 
 fn main() {
@@ -8,7 +8,18 @@ fn main() {
     println!("Config: {:#?}", config);
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, clap::ValueEnum)]
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    clap::ValueEnum,
+    serde::Serialize,
+    serde::Deserialize,
+)]
 enum MyEnum {
     A,
     B,
