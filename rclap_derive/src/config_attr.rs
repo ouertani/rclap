@@ -5,10 +5,10 @@ use std::{
 
 use syn::{Token, parse::Parse, parse::ParseStream};
 
-#[derive(Debug)]
 pub(crate) struct ConfigAttr {
     path: String,
     pub export: bool,
+    pub extra_derives: Vec<syn::Path>,
 }
 impl ConfigAttr {
     pub(crate) fn full_path(&self) -> PathBuf {
@@ -21,7 +21,11 @@ impl ConfigAttr {
 impl Default for ConfigAttr {
     fn default() -> Self {
         let path = "config.toml".to_string();
-        Self { path, export: true }
+        Self {
+            path,
+            export: true,
+            extra_derives: Vec::new(),
+        }
     }
 }
 
@@ -48,6 +52,18 @@ impl Parse for ConfigAttr {
                     let _eq: Token![=] = input.parse()?;
                     let export_lit: syn::LitBool = input.parse()?;
                     config.export = export_lit.value();
+                }
+                "derives" => {
+                    let _eq: Token![=] = input.parse()?;
+
+                    if input.peek(syn::token::Bracket) {
+                        let content;
+                        syn::bracketed!(content in input);
+                        config.extra_derives = content
+                            .parse_terminated(syn::Path::parse, Token![,])?
+                            .into_iter()
+                            .collect();
+                    }
                 }
                 _ => {
                     return Err(syn::Error::new(ident.span(), "unknown parameter"));
