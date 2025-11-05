@@ -13,8 +13,8 @@ pub fn config(
     let config_attr = parse_macro_input!(args as ConfigAttr);
     let input_parsed = parse_macro_input!(input as syn::ItemStruct);
     let struct_name = &input_parsed.ident;
-
-    let config_spec: ConfigSpec = ConfigSpec::from_file(&config_attr.full_path())
+    let struct_def: String = quote! {#struct_name}.to_string();
+    let config_spec: ConfigSpec = ConfigSpec::from_file(&config_attr.full_path(), &struct_def)
         .unwrap_or_else(|e| panic!("Failed to parse Toml config: {}", e));
 
     generate_struct(config_spec, struct_name, &config_attr).into()
@@ -338,11 +338,11 @@ fn generate_enum(
     };
 
     quote! {
-            #derives
+        #derives
         #extra_derives
-    #enum_attributes
-            pub enum #enum_ident {
-                #(#variants)*
-            }
+        #enum_attributes
+        pub enum #enum_ident {
+            #(#variants)*
         }
+    }
 }

@@ -12,19 +12,24 @@ pub struct ConfigSpec {
     pub fields: Vec<Spec>,
 }
 impl ConfigSpec {
-    pub fn from_file(path: &PathBuf) -> Result<Self, Box<dyn std::error::Error>> {
+    pub fn from_file(
+        path: &PathBuf,
+        struct_name: &str,
+    ) -> Result<Self, Box<dyn std::error::Error>> {
         let content = std::fs::read_to_string(path)?;
         if path.extension().and_then(|s| s.to_str()) == Some("toml") {
-            let spec = Self::load_toml_config(&content);
+            let spec = Self::load_toml_config(&content, struct_name);
             Ok(spec)
         } else {
             Err("Unsupported file format. Only .toml is supported.".into())
         }
     }
-    fn load_toml_config(toml_content: &str) -> ConfigSpec {
+    fn load_toml_config(toml_content: &str, struct_name: &str) -> ConfigSpec {
         let generic_config_spec: GenericConfigSpec = toml::from_str(toml_content)
             .unwrap_or_else(|e| panic!("Failed to parse TOML config: {}", e));
-        generic_config_spec.into()
+        generic_config_spec
+            .with_struct_name(struct_name.to_string())
+            .into()
     }
 }
 
@@ -32,15 +37,25 @@ impl ConfigSpec {
 pub struct GenericConfigSpec {
     #[serde(flatten)]
     pub fields: HashMap<String, toml::Value>,
+    struct_name: Option<String>,
+}
+impl GenericConfigSpec {
+    pub fn with_struct_name(self, struct_name: String) -> GenericConfigSpec {
+        GenericConfigSpec {
+            fields: self.fields,
+            struct_name: Some(struct_name),
+        }
+    }
 }
 impl From<GenericConfigSpec> for ConfigSpec {
     fn from(generic: GenericConfigSpec) -> Self {
         let mut fields = Vec::new();
-
+        let struct_name = generic.struct_name.unwrap_or_else(|| "Config".to_string());
         for (field_name, value) in generic.fields {
             match value {
                 toml::Value::Table(table) => {
-                    let field_spec = table_to_field_spec(field_name.clone(), &table, None);
+                    let field_spec =
+                        table_to_field_spec(field_name.clone(), &table, None, &struct_name);
 
                     fields.push(field_spec);
                 }
@@ -57,6 +72,7 @@ fn table_to_field_spec(
     toml_tag_name: String,
     table: &toml::value::Table,
     parent_id: Option<String>,
+    struct_name: &str,
 ) -> Spec {
     let doc = table.get("doc").and_then(|v| v.as_str()).map(String::from);
     let enum_name = table.get("enum").and_then(|v| v.as_str()).map(String::from);
@@ -78,7 +94,7 @@ fn table_to_field_spec(
         .and_then(|s| s.chars().next());
     let name = &toml_tag_name;
     let id = match parent_id {
-        None => name.clone(),
+        None => format!("{struct_name}.{name}").to_string(),
         Some(pname) => format!("{pname}.{name}").to_string(),
     };
     let reserved_keys = ["type", "default", "doc", "env", "optional", "long", "short"];
@@ -88,7 +104,8 @@ fn table_to_field_spec(
         if !reserved_keys.contains(&sub_name.as_str())
             && let toml::Value::Table(sub_table) = sub_value
         {
-            let sub_field = table_to_field_spec(sub_name.clone(), sub_table, Some(id.clone()));
+            let sub_field =
+                table_to_field_spec(sub_name.clone(), sub_table, Some(id.clone()), struct_name);
             subtype_fields.push(sub_field);
         }
     }
