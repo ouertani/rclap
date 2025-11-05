@@ -134,7 +134,7 @@ dependencies = [
 
 [[package]]
 name = "example"
-version = "0.4.2"
+version = "0.5.0"
 dependencies = [
  "clap",
  "rclap",
@@ -372,7 +372,7 @@ checksum = "69cdb34c158ceb288df11e18b4bd39de994f6657d83847bdffdbd7f346754b0f"
 
 [[package]]
 name = "rclap"
-version = "0.3.2"
+version = "0.4.0"
 dependencies = [
  "clap",
  "rclap_derive",
@@ -380,7 +380,7 @@ dependencies = [
 
 [[package]]
 name = "rclap_core"
-version = "0.3.2"
+version = "0.4.0"
 dependencies = [
  "serde",
  "tempfile",
@@ -389,7 +389,7 @@ dependencies = [
 
 [[package]]
 name = "rclap_derive"
-version = "0.3.2"
+version = "0.4.0"
 dependencies = [
  "clap",
  "proc-macro2",
