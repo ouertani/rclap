@@ -13,7 +13,7 @@ pub fn config(
     let config_attr = parse_macro_input!(args as ConfigAttr);
     let input_parsed = parse_macro_input!(input as syn::ItemStruct);
     let struct_name = &input_parsed.ident;
-    let struct_def: String = quote! {#struct_name}.to_string();
+    let struct_def: String = quote! {#struct_name}.to_string().to_lowercase();
     let config_spec: ConfigSpec = ConfigSpec::from_file(&config_attr.full_path(), &struct_def)
         .unwrap_or_else(|e| panic!("Failed to parse Toml config: {}", e));
 
