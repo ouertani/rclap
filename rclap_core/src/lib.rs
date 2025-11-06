@@ -206,10 +206,10 @@ mod tests {
     #[test]
     fn test_simple_field_parsing() {
         let toml_content = r#"
-port = { type = "int", default = "8080", doc = "Server port", env = "PORT" }
-name = { type = "String", default = "test", long = "name", short = "n" }
-"#;
-        let config_spec = ConfigSpec::load_toml_config(toml_content);
+        port = { type = "int", default = "8080", doc = "Server port", env = "PORT" }
+        name = { type = "String", default = "test", long = "name", short = "n" }
+        "#;
+        let config_spec = ConfigSpec::load_toml_config(toml_content, "");
 
         assert_eq!(config_spec.fields.len(), 2);
 
@@ -218,7 +218,7 @@ name = { type = "String", default = "test", long = "name", short = "n" }
         assert_eq!(port_field.name, "port");
         assert_eq!(port_field.field_type, "i64");
         assert_eq!(port_field.doc, Some("Server port".to_string()));
-        assert_eq!(port_field.id, "port");
+        assert_eq!(port_field.id, ".port");
         let port = port_field.as_field_spec();
 
         assert_eq!(port.default, Some("8080".to_string()));
@@ -256,14 +256,14 @@ name = { type = "String", default = "test", long = "name", short = "n" }
         env = "DB_PORT"
         "#;
 
-        let config_spec = ConfigSpec::load_toml_config(toml_content);
+        let config_spec = ConfigSpec::load_toml_config(toml_content, "");
         assert_eq!(config_spec.fields.len(), 1);
 
         // Test database field
         let db_field = &config_spec.fields[0];
         assert_eq!(db_field.name, "database");
         assert_eq!(db_field.field_type, "DatabaseConfig");
-        assert_eq!(db_field.id, "database");
+        assert_eq!(db_field.id, ".database");
 
         // Extract and test database subtype
 
@@ -274,7 +274,7 @@ name = { type = "String", default = "test", long = "name", short = "n" }
         let host_field = &fields[0];
         assert_eq!(host_field.name, "host");
         assert_eq!(host_field.field_type, "String");
-        assert_eq!(host_field.id, "database.host");
+        assert_eq!(host_field.id, ".database.host");
 
         let host = host_field.as_field_spec();
 
@@ -287,7 +287,7 @@ name = { type = "String", default = "test", long = "name", short = "n" }
         let port_field = &fields[1];
         assert_eq!(port_field.name, "port");
         assert_eq!(port_field.field_type, "i64");
-        assert_eq!(port_field.id, "database.port");
+        assert_eq!(port_field.id, ".database.port");
 
         let port = port_field.as_field_spec();
         assert_eq!(port.default, Some("5432".to_string()));
@@ -314,7 +314,7 @@ name = { type = "String", default = "test", long = "name", short = "n" }
             type = "TlsConfig"
             cert = {  env = "TLS_CERT" }
         "#;
-        let config_spec = ConfigSpec::load_toml_config(toml_content);
+        let config_spec = ConfigSpec::load_toml_config(toml_content, "");
 
         assert_eq!(config_spec.fields.len(), 1);
 
@@ -326,7 +326,7 @@ name = { type = "String", default = "test", long = "name", short = "n" }
         let server_field = get_field(fields, "server").unwrap();
         assert_eq!(server_field.name, "server");
         assert_eq!(server_field.field_type, "ServerConfig");
-        assert_eq!(server_field.id, "app.server");
+        assert_eq!(server_field.id, ".app.server");
 
         let fields = server_field.as_subtype_spec();
         assert_eq!(fields.len(), 2);
@@ -334,14 +334,14 @@ name = { type = "String", default = "test", long = "name", short = "n" }
         let http_field = &fields[0];
         assert_eq!(http_field.name, "http");
         assert_eq!(http_field.field_type, "HttpConfig");
-        assert_eq!(http_field.id, "app.server.http");
+        assert_eq!(http_field.id, ".app.server.http");
 
         let fields = http_field.as_subtype_spec();
         assert_eq!(fields.len(), 2);
 
         let port_field = get_field(fields, "port").unwrap();
         assert_eq!(port_field.name, "port");
-        assert_eq!(port_field.id, "app.server.http.port");
+        assert_eq!(port_field.id, ".app.server.http.port");
     }
 
     #[test]
@@ -351,7 +351,7 @@ name = { type = "String", default = "test", long = "name", short = "n" }
         host = { type = "String", env = "HOST" }
         debug = { type = "bool", optional = false }
         "#;
-        let config_spec = ConfigSpec::load_toml_config(toml_content);
+        let config_spec = ConfigSpec::load_toml_config(toml_content, "");
 
         assert_eq!(config_spec.fields.len(), 3);
 
@@ -373,7 +373,7 @@ host = { type = "String", short = "h" }
 invalid_short = { type = "String", short = "invalid" }
 empty_short = { type = "String", short = "" }
 "#;
-        let config_spec = ConfigSpec::load_toml_config(toml_content);
+        let config_spec = ConfigSpec::load_toml_config(toml_content, "");
 
         assert_eq!(config_spec.fields.len(), 4);
 
@@ -402,7 +402,7 @@ host = { type = "String", default = "localhost" }
 "#;
         let (_temp_dir, file_path) = create_temp_toml(toml_content);
 
-        let config_spec = ConfigSpec::from_file(&file_path).unwrap();
+        let config_spec = ConfigSpec::from_file(&file_path, "").unwrap();
         assert_eq!(config_spec.fields.len(), 2);
     }
 
@@ -412,7 +412,7 @@ host = { type = "String", default = "localhost" }
         let file_path = temp_dir.path().join("config.yaml");
         fs::write(&file_path, "port: 8080").unwrap();
 
-        let result = ConfigSpec::from_file(&file_path);
+        let result = ConfigSpec::from_file(&file_path, "");
         assert!(result.is_err());
         match result {
             Err(e) => assert!(e.to_string().contains("Unsupported file format")),
@@ -423,7 +423,7 @@ host = { type = "String", default = "localhost" }
     #[test]
     fn test_from_file_nonexistent() {
         let file_path = PathBuf::from("nonexistent.toml");
-        let result = ConfigSpec::from_file(&file_path);
+        let result = ConfigSpec::from_file(&file_path, "");
         assert!(result.is_err());
     }
 
@@ -472,7 +472,7 @@ host = { type = "String", default = "localhost" }
                                             invalid toml content
                                             port = 
                                             "#;
-        ConfigSpec::load_toml_config(invalid_toml);
+        ConfigSpec::load_toml_config(invalid_toml, "");
     }
 
     #[test]
@@ -503,7 +503,7 @@ host = { type = "String", default = "localhost" }
                                             level = { type = "string", default = "info", env = "LOG_LEVEL", short = "l" }
                                             file = { type = "string", env = "LOG_FILE", optional = true }
                                             "#;
-        let config_spec = ConfigSpec::load_toml_config(toml_content);
+        let config_spec = ConfigSpec::load_toml_config(toml_content, "");
 
         assert_eq!(config_spec.fields.len(), 4);
 
@@ -525,11 +525,11 @@ host = { type = "String", default = "localhost" }
 
         let primary = get_field(fields, "primary").unwrap();
         assert_eq!(primary.name, "primary");
-        assert_eq!(primary.id, "database.primary");
+        assert_eq!(primary.id, ".database.primary");
 
         let primary_subtype = primary.as_subtype_spec();
         let url_field = get_field(primary_subtype, "url").unwrap();
-        assert_eq!(url_field.id, "database.primary.url");
+        assert_eq!(url_field.id, ".database.primary.url");
 
         let logging = config_spec.get_field("logging").unwrap();
         assert_eq!(logging.name, "logging");
