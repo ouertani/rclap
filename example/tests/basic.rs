@@ -9,11 +9,14 @@ enum MyEnum {
     B,
     C,
 }
+#[config(path="second_config.toml" ,derives=[serde::Serialize, serde::Deserialize])]
+struct MySecondConfig;
 #[test]
 #[serial]
 fn test_basic_file() {
     #[config]
     struct MyConfig;
+
     let config = MyConfig::parse();
     assert_eq!(config.port, 8080);
     assert_eq!(config.ip, "localhost".to_string());
