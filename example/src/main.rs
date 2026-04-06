@@ -8,6 +8,11 @@ struct MySecondConfig;
 fn main() {
     let config = MyConfig::parse();
     println!("Config: {:#?}", config);
+    let map = config.s.iter_map();
+    for (key, value) in &map {
+        println!("Key: {}, Value: {}", key, value);
+    }
+    // println!("Config as iter: {:?}", config.iter_map());
 }
 
 #[derive(

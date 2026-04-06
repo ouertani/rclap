@@ -26,6 +26,7 @@ fn generate_struct(
     config_attr: &ConfigAttr,
 ) -> proc_macro2::TokenStream {
     let mut all_structs = Vec::new();
+    let mut all_iter_map_impls = Vec::new();
 
     let main_struct = generate_single_struct(
         struct_name,
@@ -34,10 +35,14 @@ fn generate_struct(
     );
     all_structs.push(main_struct);
 
+    let main_iter_map = generate_iter_map_impl(struct_name, &config_spec.fields);
+    all_iter_map_impls.push(main_iter_map);
+
     collect_subtypes(
         &config_spec.fields,
         &mut all_structs,
         config_attr.extra_derives.clone(),
+        &mut all_iter_map_impls,
     );
     let private_mod_name = syn::Ident::new(
         &struct_name.to_string().to_lowercase().to_string(),
@@ -55,6 +60,7 @@ fn generate_struct(
       pub mod #private_mod_name {
             use clap::{Parser, ValueEnum};
             #(#all_structs)*
+            #(#all_iter_map_impls)*
 
         impl #struct_name {
             pub fn parse() -> Self {
@@ -282,7 +288,12 @@ fn generate_single_struct(
     }
 }
 
-fn collect_subtypes(fields: &[Spec], items: &mut Vec<TokenStream>, extra_derives: Vec<syn::Path>) {
+fn collect_subtypes(
+    fields: &[Spec],
+    items: &mut Vec<TokenStream>,
+    extra_derives: Vec<syn::Path>,
+    iter_map_impls: &mut Vec<TokenStream>,
+) {
     for field in fields {
         match &field.variant {
             GenericSpec::SubtypeSpec(subtype_spec) => {
@@ -291,7 +302,9 @@ fn collect_subtypes(fields: &[Spec], items: &mut Vec<TokenStream>, extra_derives
                 let subtype_struct =
                     generate_single_struct(&struct_ident, subtype_spec, extra_derives.clone());
                 items.push(subtype_struct);
-                collect_subtypes(subtype_spec, items, extra_derives.clone());
+                let iter_map = generate_iter_map_impl(&struct_ident, subtype_spec);
+                iter_map_impls.push(iter_map);
+                collect_subtypes(subtype_spec, items, extra_derives.clone(), iter_map_impls);
             }
             GenericSpec::EnumSpec(enum_spec) if enum_spec.variants.is_empty() => {}
             GenericSpec::EnumSpec(enum_spec) => {
@@ -322,6 +335,17 @@ fn generate_enum(
         })
         .collect();
 
+    let display_arms: Vec<TokenStream> = enum_spec
+        .variants
+        .iter()
+        .map(|variant_name| {
+            let variant_ident = syn::Ident::new(variant_name, proc_macro2::Span::call_site());
+            quote! {
+                #enum_ident::#variant_ident => write!(f, #variant_name),
+            }
+        })
+        .collect();
+
     let derives = quote! {
         #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
     };
@@ -338,11 +362,98 @@ fn generate_enum(
     };
 
     quote! {
-        #derives
-        #extra_derives
-        #enum_attributes
-        pub enum #enum_ident {
-            #(#variants)*
+           #derives
+           #extra_derives
+           #enum_attributes
+           pub enum #enum_ident {
+               #(#variants)*
+           }
+        impl std::fmt::Display for #enum_ident {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                   match self {
+                       #(#display_arms)*
+                   }
+               }
+           }
+       }
+}
+fn generate_iter_map_impl(struct_ident: &proc_macro2::Ident, fields: &[Spec]) -> TokenStream {
+    let entries: Vec<TokenStream> = fields
+        .iter()
+        .map(|field| {
+            let field_name = syn::Ident::new(&field.name, proc_macro2::Span::call_site());
+            let key = &field.name;
+
+            match &field.variant {
+                // Flatten subtypes recursively
+                GenericSpec::SubtypeSpec(_) | GenericSpec::ExternalSpec(_) => {
+                    quote! {
+                        for (k, v) in self.#field_name.iter_map() {
+                            map.insert(format!("{}.{}", #key, k), v);
+                        }
+                    }
+                }
+                // Vec fields: join with comma
+                GenericSpec::VecSpec(_) => {
+                    quote! {
+                        map.insert(
+                            #key.to_string(),
+                            self.#field_name
+                                .iter()
+                                .map(|v| v.to_string())
+                                .collect::<Vec<_>>()
+                                .join(","),
+                        );
+                    }
+                }
+                GenericSpec::EnumSpec(_) => {
+                    quote! {
+                        map.insert(
+                            #key.to_string(),
+                            clap::ValueEnum::to_possible_value(&self.#field_name)
+                                .expect("no skipped variants")
+                                .get_name()
+                                .to_string(),
+                        );
+                    }
+                }
+                // Optional fields
+                _ if field.optional => {
+                    quote! {
+                        map.insert(
+                            #key.to_string(),
+                            self.#field_name
+                                .as_ref()
+                                .map(|v| v.to_string())
+                                .unwrap_or_default(),
+                        );
+                    }
+                }
+                _ if field.field_type == PATH_BUF => {
+                    quote! {
+                        map.insert(
+                            #key.to_string(),
+                            self.#field_name.display().to_string(),
+                        );
+                    }
+                }
+                // All other scalar / enum fields
+                _ => {
+                    quote! {
+                        map.insert(#key.to_string(), self.#field_name.to_string());
+                    }
+                }
+            }
+        })
+        .collect();
+
+    quote! {
+        impl #struct_ident {
+            pub fn iter_map(&self) -> std::collections::HashMap<String, String> {
+                let mut map = std::collections::HashMap::new();
+                #(#entries)*
+                map
+            }
         }
     }
 }
