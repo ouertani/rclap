@@ -114,6 +114,10 @@ fn table_to_field_spec(
         .get("optional")
         .and_then(|v| v.as_bool())
         .unwrap_or(false);
+    let is_secret = table
+        .get("secret")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
     if field_type.is_vec {
         let default = table.get("default").cloned();
         let variant = GenericSpec::VecSpec(VecField {
@@ -136,6 +140,7 @@ fn table_to_field_spec(
             long_arg,
             short_arg,
             optional,
+            is_secret,
         })
     } else if !subtype_fields.is_empty() {
         GenericSpec::SubtypeSpec(SubField(subtype_fields.clone()))

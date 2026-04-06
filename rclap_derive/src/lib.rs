@@ -59,6 +59,7 @@ fn generate_struct(
 
       pub mod #private_mod_name {
             use clap::{Parser, ValueEnum};
+            use crate::Secret;
             #(#all_structs)*
             #(#all_iter_map_impls)*
 
@@ -256,6 +257,11 @@ fn generate_single_struct(
                     attributes.push(quote! { #[command(flatten)] });
                 }
             }
+            let field_type = if field.secret {
+                quote! { Secret<#field_type> }
+            } else {
+                field_type
+            };
 
             if is_optional {
                 quote! {
