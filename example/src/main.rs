@@ -1,4 +1,3 @@
-use rclap::Secret;
 use rclap::config;
 
 #[config(derives=[serde::Serialize, serde::Deserialize])]
@@ -21,7 +20,7 @@ fn main() {
         &secret_config.pwd,
         &secret_config.pwd.expose_secret()
     );
-    // println!("Config as iter: {:?}", config.iter_map());
+    println!("Secret Config: {:#?}", &secret_config.pwd_r,);
 }
 
 #[derive(
