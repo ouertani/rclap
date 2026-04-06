@@ -11,6 +11,7 @@ pub struct Spec {
     pub variant: GenericSpec,
     pub name: String,
     pub optional: bool,
+    pub secret: bool,
 }
 #[derive(serde::Deserialize, Clone, Debug)]
 pub enum GenericSpec {
@@ -28,6 +29,7 @@ pub struct Field {
     pub long_arg: Option<String>,
     pub short_arg: Option<char>,
     pub optional: bool,
+    pub is_secret: bool,
 }
 
 #[derive(serde::Deserialize, Clone, Debug)]
@@ -77,6 +79,13 @@ impl Spec {
             GenericSpec::EnumSpec(f) => f.optional,
             GenericSpec::VecSpec(f) => f.optional,
         };
+        let secret = match &variant {
+            GenericSpec::FieldSpec(f) => f.is_secret,
+            GenericSpec::SubtypeSpec { .. } => false,
+            GenericSpec::ExternalSpec(_) => false,
+            GenericSpec::EnumSpec(_) => false,
+            GenericSpec::VecSpec(_) => false,
+        };
         Spec {
             toml_tag_name,
             id,
@@ -85,6 +94,7 @@ impl Spec {
             variant,
             name,
             optional,
+            secret,
         }
     }
 }

@@ -44,3 +44,5 @@
 //!   -h, --help           Print help
 //! ```
 pub use rclap_derive::config;
+mod secret;
+pub use secret::{IntoSecret, Secret};

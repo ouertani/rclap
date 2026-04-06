@@ -4,6 +4,8 @@ use rclap::config;
 struct MyConfig;
 #[config(path="second_config.toml" ,derives=[serde::Serialize, serde::Deserialize])]
 struct MySecondConfig;
+#[config("config_with_secret.toml")]
+struct MyConfigWithSecret;
 
 fn main() {
     let config = MyConfig::parse();
@@ -12,7 +14,13 @@ fn main() {
     for (key, value) in &map {
         println!("Key: {}, Value: {}", key, value);
     }
-    // println!("Config as iter: {:?}", config.iter_map());
+    let secret_config = MyConfigWithSecret::parse();
+    println!(
+        "Secret Config: {:#?},  {:#?}",
+        &secret_config.pwd,
+        &secret_config.pwd.expose_secret()
+    );
+    println!("Secret Config: {:#?}", &secret_config.pwd_r,);
 }
 
 #[derive(
