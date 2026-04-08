@@ -59,9 +59,7 @@ fn generate_struct(
 
       pub mod #private_mod_name {
             use clap::{Parser, ValueEnum};
-          #[cfg(feature = "secret")]
             use rclap::Secret;
-          #[cfg(feature = "secret")]
             use rclap::StringSecret;
             #(#all_structs)*
             #(#all_iter_map_impls)*

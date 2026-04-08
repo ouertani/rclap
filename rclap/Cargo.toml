@@ -14,7 +14,8 @@ repository = "https://github.com/ouertani/rclap"
 [dependencies]
 rclap_derive = { path = "../rclap_derive", version = "1.0.0" }
 secrecy = { version = "0.10", optional = true }
-serde = { version = "1.0", features = ["derive"], optional = true }
+serde = { version = "1.0",  optional = true }
 
 [features]
-secret = ["dep:secrecy",  "dep:serde"]
+secrecy = ["dep:secrecy"]
+serde = ["dep:serde"]
