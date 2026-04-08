@@ -3,30 +3,46 @@
 ![Rust](https://img.shields.io/badge/rust-stable-brightgreen.svg)
 [![Version](https://img.shields.io/crates/v/rclap.svg)](https://crates.io/crates/rclap)
 [![Docs.rs](https://docs.rs/rclap/badge.svg)](https://docs.rs/rclap)
+![Advanced](https://img.shields.io/badge/feature-advanced-blue.svg)
 
 > rclap is a Rust utility that helps you create command-line interfaces with the clap crate by reducing boilerplate code. It generates clap structures from a simple TOML configuration file, allowing you to define your application's command-line arguments, environment variables, and default values in one place.
 
-# How it works
+---
 
-1- Create a TOML File: Define your configuration settings in a simple TOML file, specifying the argument name, type, default value, and associated environment variable.
+## How it works
+
+1- **Create a TOML File**: Define your configuration settings in a simple TOML file, specifying the argument name, type, default value, and associated environment variable.
 
 ```toml
-port = { type = "int", default = "8080", doc = "Server port number", env = "PORT" }
-ip = {  default = "localhost", doc = "connection URL", env = "URL" }
+# Basic configuration
+ip = { default = "localhost", env = "IP" }
+port = { type = "int", default = "8080", env = "PORT" }
+
+# Inline enum
+style = { enum = "Style", variants = ["Light", "Dark", "System"], default = "Light", env = "STYLE" }
+
+# Array type
+colors = { type = "[char]", default = ['R','G','B'], env = "COLORS" }
+
+# Optional values
+debug = { type = "bool", optional = true, default = "false", env = "DEBUG" }
+
+# Nested configuration
+[database]
+url = { default = "localhost:5432", env = "DB_URL" }
+pool_size = { type = "int", default = "10", env = "DB_POOL_SIZE" }
 ```
 
-2- Apply the Macro: Use the #[config] macro on an empty struct in your Rust code. The macro reads the TOML file and generates the complete clap::Parser implementation for you.
+2- **Apply the Macro**: Use the `#[config]` macro on an empty struct in your Rust code. The macro reads the TOML file and generates the complete clap::Parser implementation for you.
 
 ```rust
 #[config]
 struct MyConfig;
-
 ```
 
-3- Parse and Use: Your application can then simply call MyConfig::parse() to handle all command-line and environment variable parsing.
+3- **Parse and Use**: Your application can then simply call `MyConfig::parse()` to handle all command-line and environment variable parsing.
 
 ```rust
-
 fn main() {
     let config = MyConfig::parse();
     println!("Config: {:#?}", config);
@@ -34,72 +50,230 @@ fn main() {
 }
 ```
 
-rclap prioritizes a hierarchical approach to configuration, allowing you to set the ip and port via either environment variables or command-line arguments. If neither is specified, the predefined default values will be used.
+---
 
-For instance, you can use the command-line flags --ip and --port to pass values directly. This would generate a help message like the one below, which clearly shows the available options, their default values, and the corresponding environment variables.
+## Advanced Features
 
+### Enum Support
+
+Define enums inline or reference external ones:
+
+```toml
+style = { enum = "Style", variants = ["Light", "Dark", "System"], default = "Light", env = "STYLE" }
 ```
 
+```rust
+enum Style {
+    Light,
+    Dark,
+    System,
+}
+```
+
+For external enums:
+
+```toml
+log_level = { enum = "crate::LogLevel", default = "INFO", env = "LOG_LEVEL" }
+```
+
+### Array Types
+
+Use bracket notation for arrays:
+
+```toml
+colors = { type = "[char]", default = ['R','G','B'], env = "COLORS" }
+digits = { type = "[int]", default = [1,2,3], env = "DIGITS" }
+```
+
+### Optional Values
+
+Mark fields as optional with `optional = true`:
+
+```toml
+debug = { type = "bool", optional = true, default = "false", env = "DEBUG" }
+cache = { type = "string", optional = true, env = "CACHE_DIR" }
+```
+
+### Nested Configuration
+
+Create inner configuration structures using section headers. The `[section]` creates a struct:
+
+```toml
+app = { type = "AppConfig" }
+
+[database]
+url = { default = "localhost:5432", env = "DB_URL" }
+pool_size = { type = "int", default = "10", env = "DB_POOL_SIZE" }
+```
+
+The `[database]` section generates a `Database` struct.
+
+*Example from [config_with_inner.toml](./example/config_with_inner.toml)*
+
+### iter_map() Method
+
+Convert all configuration to a HashMap for iteration:
+
+```rust
+let config = MyConfig::parse();
+let map = config.s.iter_map();
+for (key, value) in &map {
+    println!("{} = {}", key, value);
+}
+```
+
+Useful for:
+- Dynamic config inspection
+- Logging all active settings
+- Serializing configuration to different formats
+
+*See [main.rs](./example/src/main.rs) for a working example.*
+
+---
+
+## Example Output
+
+rclap generates clear help messages showing available options, their environment variable names, and default values:
+
+```
 Usage: example [OPTIONS]
 
 Options:
-      --"ip" <ip>      connection URL [env: URL=] [default: localhost]
-      --"port" <port>  Server port number [env: PORT=120] [default: 8080]
+      --"ip" <ip>      connection URL [env: IP=] [default: localhost]
+      --"port" <port>  Server port number [env: PORT=] [default: 8080]
   -h, --help           Print help
 ```
+
+---
+
+## Generated Code
 
 The equivalent for the above code will be generated by the macro:
 
 ```rust,compile_fail
 
-
-   #[derive(Debug, Clone, PartialEq,  Parser)]
-   pub struct MyConfig {
-        ///Server port number
-        #[arg(
-            id = "port",
-            default_value_t = 8080,
-            env = "PORT",
-            long = stringify!("port")
-        )]
-        pub port: i64,
-        ///connection URL
-        #[arg(
-            id = "ip",
-            default_value = "localhost",
-            env = "URL",
-            long = stringify!("ip")
-        )]
-        pub ip: String,
-    }
+#[derive(Debug, Clone, PartialEq,  Parser)]
+pub struct MyConfig {
+    ///Server port number
+    #[arg(
+        id = "port",
+        default_value_t = 8080,
+        env = "PORT",
+        long = "port"
+    )]
+    pub port: i64,
+    ///connection URL
+    #[arg(
+        id = "ip",
+        default_value = "localhost",
+        env = "URL",
+        long = "ip"
+    )]
+    pub ip: String,
+}
 
 ```
 
-The [example folder](./example) contains more working samples.
+---
 
-## Settings
+## Configuration Settings
 
-| name        | description                                                                                                                                                                                                                          |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **type**    | if not specified, `String` type will be used                                                                                                                                                                                         |
-| **env**     | the environment variable name to use                                                                                                                                                                                                 |
-| **long**    | same as in clap if not specified the id value will be used instead                                                                                                                                                                   |
-| **short**   | same as in clap                                                                                                                                                                                                                      |
-| **default** | the default value to use if neither env nor command line argument is set                                                                                                                                                             |
-| **doc**     | the documentation string to use                                                                                                                                                                                                      |
-| **config**  | if no arguments are provided, the macro will look for a config.toml file in the current directory. You can also specify a different path by providing a string literal to the macro, like so: #[config("path/to/your_config.toml")]. |
+| Setting   | Description    |
+|-----------|----------------|
+| **type**  | Data type: `int`, `float`, `bool`, `string`, `path`, `[T]` for arrays (e.g., `[int]`, `[char]`) |
+| **env**   | Environment variable name for runtime override |
+| **default** | Default value if neither env nor command line argument is set |
+| **doc**   | Documentation string displayed in help messages |
+| **enum**  | For inline enums: defines enum name and is used with `variants` |
+| **variants** | Array of variant names for inline enum definitions |
+| **optional** | Marks field as optional; value may be absent from config |
+| **long**  | Long flag name (same as clap); if not specified, the id value is used |
+| **short** | Short flag character (same as clap) |
 
-## dependencies
+---
+
+## Secret Feature
+
+Enable the `secret` feature to access secure wrapper types for passwords, tokens, and API keys. When a field is marked with `secret = true`, its value is hidden in Display and Debug output.
+
+### Secret Types
+
+**`Secret<S>`** - Generic wrapper for any type implementing `CloneableSecret`:
+
+```rust
+use rclap::Secret;
+
+let password: Secret<String> = Secret::new("my_secret_password".to_string());
+println!("{}", password); // outputs: *
+```
+
+**`StringSecret`** - Specialized wrapper for strings:
+
+```rust
+use rclap::StringSecret;
+
+let token = StringSecret::new("my_api_token");
+println!("{}", token); // outputs: *
+```
+
+### Config Syntax
+
+Mark fields as secrets using the `secret` attribute:
+
+```toml
+pwd = { default = "changeme", secret = true }
+pwd_r = { default = "changeme", optional = true, secret = true }
+pwd_int = { default = "123", secret = true, type = "Int" }
+```
+
+To access the actual value, use the `expose_secret()` method:
+
+```rust
+let config = MyConfig.parse();
+println!("{}", config.pwd);          // outputs: *
+println!("{}", config.pwd.expose_secret()); // outputs: changeme
+```
+
+*Example from [config_with_secret.toml](./example/config_with_secret.toml)*
+
+---
+
+## Example Files
+
+- [config.toml](./example/config.toml)
+- [multi_types.toml](./example/multi_types.toml)
+- [option.toml](./example/option.toml)
+- [second_config.toml](./example/second_config.toml)
+- [config_with_inner.toml](./example/config_with_inner.toml)
+- [config_with_secret.toml](./example/config_with_secret.toml)
+
+---
+
+## Dependencies
 
 The rclap utility is a macro generator that relies on two core dependencies:
 
-- clap: A powerful command-line argument parser for Rust. rclap uses it to parse command-line arguments and generate help messages.
+**clap**: A powerful command-line argument parser for Rust. rclap uses it to parse command-line arguments and generate help messages.
 
-- toml: A library for parsing and handling TOML files. rclap uses it to read the configuration settings you define in your .toml file.
+**toml**: A library for parsing and handling TOML files. rclap uses it to read the configuration settings you define in your `.toml` file.
 
-To use rclap, you must add clap to your Cargo.toml file with the env and derive features enabled, as shown in the example below.
+To use rclap, add the following to your `Cargo.toml`:
 
 ```toml
-
 clap = { version = "4.5", features = ["env", "derive"] }
 ```
+
+**Optional features:**
+
+```toml
+[dependencies]
+rclap = { version = "0.8", features = ["secret"] }  # Enable secret wrapper types
+
+[dev-dependencies]
+clap = { version = "4.5", features = ["env", "derive"] }
+serde = { version = "1.0", features = ["derive"] }   # Required for serialization
+```
+
+---
+
+The [example folder](./example) contains more working samples.
