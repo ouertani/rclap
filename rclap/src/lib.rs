@@ -44,8 +44,8 @@
 //!       -h, --help           Print help
 //! ```
 
-#[cfg(feature = "secret")]
-pub mod secret;
 pub use rclap_derive::config;
 #[cfg(feature = "secret")]
-pub use secret::Secret;
+pub mod secrecy;
+#[cfg(feature = "secret")]
+pub use secrecy::*;
