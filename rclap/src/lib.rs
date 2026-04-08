@@ -147,13 +147,14 @@
 //! Enable the `secret` feature to access secure wrapper types for passwords, tokens, and API keys.
 
 pub use rclap_derive::config;
-#[cfg(feature = "secret")]
+#[cfg(feature = "secrecy")]
 pub mod secrecy;
-#[cfg(feature = "secret")]
+#[cfg(feature = "secrecy")]
 pub use secrecy::*;
-#[cfg(not(feature = "secret"))]
+
+#[cfg(not(feature = "secrecy"))]
 pub mod secret;
-#[cfg(not(feature = "secret"))]
-pub use secret::*;
-#[cfg(not(feature = "secret"))]
+#[cfg(not(feature = "secrecy"))]
 pub use secret::StringSecret;
+#[cfg(not(feature = "secrecy"))]
+pub use secret::*;

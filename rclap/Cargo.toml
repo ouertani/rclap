@@ -17,5 +17,5 @@ secrecy = { version = "0.10", optional = true }
 serde = { version = "1.0",  optional = true }
 
 [features]
-secret = ["dep:secrecy"]
+secrecy = ["dep:secrecy"]
 serde = ["dep:serde"]
