@@ -16,7 +16,7 @@ fn main() {
     }
     let secret_config = MyConfigWithSecret::parse();
     println!(
-        "Secret Config: {:#?},  {:#?}",
+        "Secret Config: {:#?}, exposed_secret: {:#?}",
         &secret_config.pwd,
         &secret_config.pwd.expose_secret()
     );

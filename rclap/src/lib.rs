@@ -41,8 +41,9 @@
 //! Options:
 //!       --"ip" <ip>      connection URL [env: URL=] [default: localhost]
 //!       --"port" <port>  Server port number [env: PORT=120] [default: 8080]
-//!   -h, --help           Print help
+//!       -h, --help           Print help
 //! ```
+
+#[cfg(feature = "secret")]
+pub use rclap_core::Secret;
 pub use rclap_derive::config;
-mod secret;
-pub use secret::{IntoSecret, Secret};

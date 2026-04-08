@@ -258,7 +258,7 @@ fn generate_single_struct(
                 }
             }
             let field_type = if field.secret {
-                quote! { Secret<#field_type> }
+                quote! { Secret }
             } else {
                 field_type
             };
@@ -443,6 +443,13 @@ fn generate_iter_map_impl(struct_ident: &proc_macro2::Ident, fields: &[Spec]) ->
                         );
                     }
                 }
+                // Secret fields: use expose_secret()
+                _ if field.secret => {
+                    quote! {
+                        map.insert(#key.to_string(), self.#field_name.expose_secret());
+                    }
+                }
+
                 // All other scalar / enum fields
                 _ => {
                     quote! {

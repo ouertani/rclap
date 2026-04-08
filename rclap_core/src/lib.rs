@@ -3,7 +3,13 @@ pub use ast::{EnumField, ExternalStruct, Field, GenericSpec, Spec, SubField};
 mod utils;
 use std::{collections::HashMap, path::PathBuf};
 
+#[cfg(feature = "secret")]
+pub mod secret;
+#[cfg(feature = "secret")]
+pub use secret::Secret;
+
 use crate::{ast::VecField, utils::get_field_type};
+
 use serde::Deserialize;
 
 pub const PATH_BUF: &str = "std::path::PathBuf";
@@ -97,7 +103,9 @@ fn table_to_field_spec(
         None => format!("{struct_name}.{name}").to_string(),
         Some(pname) => format!("{pname}.{name}").to_string(),
     };
-    let reserved_keys = ["type", "default", "doc", "env", "optional", "long", "short"];
+    let reserved_keys = [
+        "type", "default", "doc", "env", "optional", "long", "short", "secret",
+    ];
 
     let mut subtype_fields = Vec::new();
     for (sub_name, sub_value) in table {
