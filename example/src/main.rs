@@ -15,12 +15,18 @@ fn main() {
         println!("Key: {}, Value: {}", key, value);
     }
     let secret_config = MyConfigWithSecret::parse();
+    println!("Secret Config: {:#?}", &secret_config);
     println!(
-        "Secret Config: {:#?},  {:#?}",
+        "Secret Config: {:#?} >>> {:#?}",
         &secret_config.pwd,
         &secret_config.pwd.expose_secret()
     );
     println!("Secret Config: {:#?}", &secret_config.pwd_r,);
+    println!(
+        "Secret Config: {:#?} >>> {:#?}",
+        &secret_config.pwd_int,
+        &secret_config.pwd_int.expose_secret()
+    );
 }
 
 #[derive(

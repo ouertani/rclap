@@ -59,7 +59,10 @@ fn generate_struct(
 
       pub mod #private_mod_name {
             use clap::{Parser, ValueEnum};
+          #[cfg(feature = "secret")]
             use rclap::Secret;
+          #[cfg(feature = "secret")]
+            use rclap::StringSecret;
             #(#all_structs)*
             #(#all_iter_map_impls)*
 
@@ -188,6 +191,7 @@ fn generate_single_struct(
                         if field.field_type == "String"
                             || field.field_type == PATH_BUF
                             || is_optional
+                            || field.secret
                         {
                             arg_params.push(quote! { default_value = #default });
                         } else if field.field_type == "char" {
@@ -257,8 +261,12 @@ fn generate_single_struct(
                     attributes.push(quote! { #[command(flatten)] });
                 }
             }
-            let field_type = if field.secret {
-                quote! { Secret<#field_type> }
+
+            let field_type = if field.secret && field.field_type == "String" {
+                quote! { StringSecret }
+            } else if field.secret {
+                quote! {
+                Secret<#field_type> }
             } else {
                 field_type
             };
@@ -443,6 +451,13 @@ fn generate_iter_map_impl(struct_ident: &proc_macro2::Ident, fields: &[Spec]) ->
                         );
                     }
                 }
+                // Secret fields: use expose_secret()
+                _ if field.secret => {
+                    quote! {
+                        map.insert(#key.to_string(), self.#field_name.expose_secret().to_string());
+                    }
+                }
+
                 // All other scalar / enum fields
                 _ => {
                     quote! {

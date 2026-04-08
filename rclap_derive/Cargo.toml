@@ -9,6 +9,7 @@ keywords = ["config", "args", "env", "settings", "clap"]
 license = "MIT"
 readme = "../README.md"
 repository = "https://github.com/ouertani/rclap"
+
 [lib]
 proc-macro = true
 
@@ -18,3 +19,4 @@ quote = "1.0"
 rclap_core = { path = "../rclap_core", version = "0.8.0" }
 clap = { version = "4.5", features = ["env", "derive"] }
 syn = { version = "2.0", features = ["full"] }
+

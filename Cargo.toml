@@ -3,7 +3,7 @@ description = "rclap is a Rust utility designed to simplify the use of the clap 
 authors = ["Slim Ouertani"]
 
 [workspace]
-members = ["rclap", "example", "rclap_core", "rclap_derive"]
+members = ["example", "rclap", "rclap_core", "rclap_derive"]
 
 resolver = "3"
 
