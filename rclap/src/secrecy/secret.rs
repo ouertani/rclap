@@ -42,6 +42,7 @@ impl<S: CloneableSecret + PartialEq> PartialEq for Secret<S> {
     }
 }
 
+#[cfg(feature = "serde")]
 impl<C: CloneableSecret> serde::Serialize for Secret<C> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -51,6 +52,7 @@ impl<C: CloneableSecret> serde::Serialize for Secret<C> {
     }
 }
 
+#[cfg(feature = "serde")]
 impl<'de, S: CloneableSecret + serde::Deserialize<'de>> serde::Deserialize<'de> for Secret<S> {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where

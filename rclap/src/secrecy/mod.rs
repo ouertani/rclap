@@ -18,17 +18,6 @@
 //! - Similar behavior to `Secret<String>`
 //! - Useful for passwords, tokens, or any string-based secrets
 //!
-//! # Usage Example
-//!
-//! ```
-//! use secrecy::{Secret, StringSecret};
-//!
-//! // Generic secret
-//! let password: Secret<String> = Secret::new("my_secret_password".to_string());
-//!
-//! // String secret
-//! let token = StringSecret::new("my_api_token");
-//! ```
 //!
 //! # Feature Flag
 //!
