@@ -151,3 +151,9 @@ pub use rclap_derive::config;
 pub mod secrecy;
 #[cfg(feature = "secret")]
 pub use secrecy::*;
+#[cfg(not(feature = "secret"))]
+pub mod secret;
+#[cfg(not(feature = "secret"))]
+pub use secret::*;
+#[cfg(not(feature = "secret"))]
+pub use secret::StringSecret;
