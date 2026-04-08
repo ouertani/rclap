@@ -45,5 +45,7 @@
 //! ```
 
 #[cfg(feature = "secret")]
-pub use rclap_core::Secret;
+pub mod secret;
 pub use rclap_derive::config;
+#[cfg(feature = "secret")]
+pub use secret::Secret;

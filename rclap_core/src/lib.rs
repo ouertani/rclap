@@ -3,10 +3,7 @@ pub use ast::{EnumField, ExternalStruct, Field, GenericSpec, Spec, SubField};
 mod utils;
 use std::{collections::HashMap, path::PathBuf};
 
-#[cfg(feature = "secret")]
-pub mod secret;
-#[cfg(feature = "secret")]
-pub use secret::Secret;
+
 
 use crate::{ast::VecField, utils::get_field_type};
 

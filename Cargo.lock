@@ -374,20 +374,18 @@ checksum = "69cdb34c158ceb288df11e18b4bd39de994f6657d83847bdffdbd7f346754b0f"
 name = "rclap"
 version = "0.8.0"
 dependencies = [
- "clap",
- "rclap_core",
  "rclap_derive",
+ "secrecy",
+ "serde",
 ]
 
 [[package]]
 name = "rclap_core"
 version = "0.8.0"
 dependencies = [
- "secrecy",
  "serde",
  "tempfile",
  "toml",
- "zeroize",
 ]
 
 [[package]]
