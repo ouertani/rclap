@@ -218,7 +218,7 @@ println!("{}", token); // outputs: *
 
 ### Config Syntax
 
-Mark fields as secrets using the `secret` attribute:
+Mark fields as secrets using the `secret = true` attribute:
 
 ```toml
 pwd = { default = "changeme", secret = true }
@@ -267,7 +267,7 @@ clap = { version = "4.5", features = ["env", "derive"] }
 
 ```toml
 [dependencies]
-rclap = { version = "0.8", features = ["secret"] }  # Enable secret wrapper types
+rclap = { version = "1.0", features = ["secrecy"] }  # Enable secret wrapper types
 
 [dev-dependencies]
 clap = { version = "4.5", features = ["env", "derive"] }

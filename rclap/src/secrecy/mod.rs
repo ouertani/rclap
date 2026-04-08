@@ -1,7 +1,7 @@
 //! Secret module - Provides secure handling of sensitive values.
 //!
 //! This module offers types for securely managing secrets like passwords, tokens, and API keys.
-//! The `secret` feature must be enabled when using these types.
+//! The `secrecy` feature must be enabled when using these types.
 //!
 //! # Types
 //!
@@ -21,7 +21,7 @@
 //!
 //! # Feature Flag
 //!
-//! These types are conditionally compiled when the `secret` Cargo feature is enabled.
+//! These types are conditionally compiled when the `secrecy` Cargo feature is enabled.
 //!
 
 pub mod secret;

@@ -144,7 +144,7 @@
 //!
 //! # Feature Flags
 //!
-//! Enable the `secret` feature to access secure wrapper types for passwords, tokens, and API keys.
+//! Enable the `secrecy` feature to access secure wrapper types for passwords, tokens, and API keys.
 
 pub use rclap_derive::config;
 #[cfg(feature = "secrecy")]
