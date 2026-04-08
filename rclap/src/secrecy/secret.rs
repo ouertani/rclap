@@ -1,7 +1,6 @@
 use std::str::FromStr;
 
-#[cfg(feature = "secret")]
-use secrecy::{CloneableSecret, ExposeSecret, SecretBox };
+use secrecy::{CloneableSecret, ExposeSecret, SecretBox};
 
 #[derive(Clone)]
 pub struct Secret<S: CloneableSecret>(pub SecretBox<S>);

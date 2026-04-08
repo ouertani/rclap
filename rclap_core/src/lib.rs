@@ -3,8 +3,6 @@ pub use ast::{EnumField, ExternalStruct, Field, GenericSpec, Spec, SubField};
 mod utils;
 use std::{collections::HashMap, path::PathBuf};
 
-
-
 use crate::{ast::VecField, utils::get_field_type};
 
 use serde::Deserialize;
