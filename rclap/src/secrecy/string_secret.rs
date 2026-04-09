@@ -1,6 +1,7 @@
 use secrecy::{ExposeSecret, SecretString as SS};
 
 #[derive(Clone)]
+#[repr(transparent)]
 pub struct StringSecret(pub SS);
 
 impl StringSecret {

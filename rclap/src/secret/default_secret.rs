@@ -1,6 +1,7 @@
 use std::str::FromStr;
 
 #[derive(Clone)]
+#[repr(transparent)]
 pub struct Secret<S>(pub S);
 
 impl<S> Secret<S> {
@@ -31,6 +32,12 @@ impl<S: FromStr> std::str::FromStr for Secret<S> {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let value = S::from_str(s)?;
         Ok(Secret::new(value))
+    }
+}
+
+impl<S> From<S> for Secret<S> {
+    fn from(value: S) -> Self {
+        Secret::new(value)
     }
 }
 

@@ -3,6 +3,7 @@ use std::str::FromStr;
 use secrecy::{CloneableSecret, ExposeSecret, SecretBox};
 
 #[derive(Clone)]
+#[repr(transparent)]
 pub struct Secret<S: CloneableSecret>(pub SecretBox<S>);
 
 impl<S: CloneableSecret> Secret<S> {
@@ -33,6 +34,11 @@ impl<S: CloneableSecret + FromStr> std::str::FromStr for Secret<S> {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let value = S::from_str(s)?;
         Ok(Secret::new(value))
+    }
+}
+impl<S: CloneableSecret> From<S> for Secret<S> {
+    fn from(value: S) -> Self {
+        Secret::new(value)
     }
 }
 
