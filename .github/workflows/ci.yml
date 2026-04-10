@@ -22,7 +22,7 @@ jobs:
         with:
           toolchain: stable
       - uses: Swatinem/rust-cache@v2
-      - run: cargo check
+      - run: cargo check --all-targets
 
   build:
     runs-on: ubuntu-latest
