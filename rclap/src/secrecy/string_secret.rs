@@ -33,6 +33,11 @@ impl std::str::FromStr for StringSecret {
         Ok(Self(SS::from(s.to_string())))
     }
 }
+impl From<&str> for StringSecret {
+    fn from(s: &str) -> Self {
+    Self::new(s)
+    }
+}
 
 impl PartialEq for StringSecret {
     fn eq(&self, other: &Self) -> bool {

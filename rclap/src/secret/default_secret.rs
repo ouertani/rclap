@@ -40,7 +40,11 @@ impl<S> From<S> for Secret<S> {
         Secret::new(value)
     }
 }
-
+impl From<&str> for Secret<String> {
+    fn from(s: &str) -> Self {
+        Secret(s.to_string())
+    }
+}
 impl<S: PartialEq> PartialEq for Secret<S> {
     fn eq(&self, other: &Self) -> bool {
         self.0 == other.0
