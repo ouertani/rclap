@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-action@stable
+      - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
       - uses: Swatinem/rust-cache@v2
@@ -28,7 +28,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-action@stable
+      - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
       - uses: Swatinem/rust-cache@v2
@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-action@stable
+      - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
       - uses: Swatinem/rust-cache@v2
@@ -48,7 +48,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-action@stable
+      - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
       - uses: Swatinem/rust-cache@v2
@@ -58,7 +58,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-action@stable
+      - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
       - uses: Swatinem/rust-cache@v2
