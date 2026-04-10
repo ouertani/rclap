@@ -22,4 +22,13 @@ jobs:
         with:
           toolchain: stable
       - uses: Swatinem/rust-cache@v2
-      - run: cargo doc --workspace --features secret --no-deps --document-private-items
+      - run: cargo doc --workspace --no-deps --document-private-items
+  doccheck-secrecy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo doc --workspace --features secrecy --no-deps --document-private-items
