@@ -361,7 +361,7 @@ fn generate_enum(
     let derives = quote! {
         #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
     };
-    let extra_derives = if extra_derives.is_empty() {
+    let extra_derives_attr = if extra_derives.is_empty() {
         quote! {}
     } else {
         quote! {
@@ -375,7 +375,7 @@ fn generate_enum(
 
     quote! {
            #derives
-           #extra_derives
+           #extra_derives_attr
            #enum_attributes
            pub enum #enum_ident {
                #(#variants)*
@@ -418,15 +418,28 @@ fn generate_iter_map_impl(struct_ident: &proc_macro2::Ident, fields: &[Spec]) ->
                         );
                     }
                 }
-                GenericSpec::EnumSpec(_) => {
-                    quote! {
-                        map.insert(
-                            #key.to_string(),
-                            clap::ValueEnum::to_possible_value(&self.#field_name)
-                                .expect("no skipped variants")
-                                .get_name()
-                                .to_string(),
-                        );
+                GenericSpec::EnumSpec(e) => {
+                    if e.optional {
+                        quote! {
+                            map.insert(
+                                #key.to_string(),
+                                self.#field_name
+                                    .as_ref()
+                                    .and_then(|e| clap::ValueEnum::to_possible_value(e))
+                                    .map(|pv| pv.get_name().to_string())
+                                    .expect("no skipped variants"),
+                            );
+                        }
+                    } else {
+                        quote! {
+                            map.insert(
+                                #key.to_string(),
+                                clap::ValueEnum::to_possible_value(&self.#field_name)
+                                    .expect("no skipped variants")
+                                    .get_name()
+                                    .to_string(),
+                            );
+                        }
                     }
                 }
                 // Optional fields
