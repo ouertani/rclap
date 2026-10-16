@@ -474,6 +474,49 @@ host = { type = "String", default = "localhost" }
     }
 
     #[test]
+    fn test_sized_int_float_types() {
+        let cases = [
+            ("int", "i64"),
+            ("Int", "i64"),
+            ("float", "f64"),
+            ("i8", "i8"),
+            ("I16", "i16"),
+            ("i32", "i32"),
+            ("i64", "i64"),
+            ("u8", "u8"),
+            ("u16", "u16"),
+            ("u32", "u32"),
+            ("u64", "u64"),
+            ("usize", "usize"),
+            ("isize", "isize"),
+            ("f32", "f32"),
+            ("f64", "f64"),
+        ];
+        for (input, expected) in cases {
+            let mut table = Map::new();
+            table.insert("type".to_string(), toml::Value::String(input.to_string()));
+            let field = get_field_type(&table, false, "test".to_string());
+            assert_eq!(field.type_name, expected, "input: {input}");
+            assert!(field.is_native, "input: {input}");
+        }
+
+        let vec_cases = [
+            ("[i32]", "Vec<i32>"),
+            ("[u64]", "Vec<u64>"),
+            ("[f32]", "Vec<f32>"),
+            ("[int]", "Vec<i64>"),
+            ("[float]", "Vec<f64>"),
+        ];
+        for (input, expected) in vec_cases {
+            let mut table = Map::new();
+            table.insert("type".to_string(), toml::Value::String(input.to_string()));
+            let field = get_field_type(&table, false, "test".to_string());
+            assert_eq!(field.type_name, expected, "input: {input}");
+            assert!(field.is_vec, "input: {input}");
+        }
+    }
+
+    #[test]
     #[should_panic(expected = "Failed to parse TOML config")]
     fn test_invalid_toml_parsing() {
         let invalid_toml = r#"

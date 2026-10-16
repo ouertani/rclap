@@ -1,24 +1,23 @@
 use crate::PATH_BUF;
 
-pub const NATIVE_TYPES: [&str; 7] = ["usize", "int", "float", "bool", "string", "path", "char"];
+pub const NATIVE_TYPES: [&str; 18] = [
+    "int", "float", "bool", "string", "path", "char", "i8", "i16", "i32", "i64", "u8", "u16",
+    "u32", "u64", "usize", "isize", "f32", "f64",
+];
 fn is_native_type(ty: &str) -> bool {
-    NATIVE_TYPES.contains(&ty.to_lowercase().as_str())
-        || ty == "usize"
-        || ty == "i64"
-        || ty == PATH_BUF
-        || ty == "f64"
-        || ty == "String"
+    NATIVE_TYPES.contains(&ty.to_lowercase().as_str()) || ty == PATH_BUF || ty == "String"
 }
 fn to_type(ty: &str) -> String {
     let ty_lower = ty.to_lowercase();
     match ty_lower.as_str() {
-        "usize" => "usize".to_string(),
         "int" => "i64".to_string(),
         "float" => "f64".to_string(),
         "bool" => "bool".to_string(),
         "string" => "String".to_string(),
         "path" => PATH_BUF.to_string(),
         "char" => "char".to_string(),
+        "i8" | "i16" | "i32" | "i64" | "u8" | "u16" | "u32" | "u64" | "usize" | "isize" | "f32"
+        | "f64" => ty_lower,
         _ => ty.to_string(),
     }
 }
