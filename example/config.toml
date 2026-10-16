@@ -12,3 +12,4 @@ enum3 = { enum = "Enum3", variants = [
   "F",
 ],  doc = "An example enum", env = "ENUM1", optional = true }
 s = {type= "crate::MySecondConfig", doc = "A nested configuration struct" , optional = true }
+names = { type = "[String]", default = ["name 1","name 2"],  env = "NAMES" }
