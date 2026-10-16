@@ -91,6 +91,30 @@ fn test_inner_types() {
 }
 #[test]
 #[serial]
+fn test_sized_types() {
+    #[config("sized_types.toml")]
+    struct MyConfig;
+
+    let config = MyConfig::parse();
+    assert_eq!(config.small_i32, -12i32);
+    assert_eq!(config.small_u32, 12u32);
+    assert_eq!(config.big_i64, -8000i64);
+    assert_eq!(config.big_u64, 8000u64);
+    assert_eq!(config.tiny_i8, -8i8);
+    assert_eq!(config.tiny_u8, 8u8);
+    assert_eq!(config.mid_i16, -16i16);
+    assert_eq!(config.mid_u16, 16u16);
+    assert_eq!(config.small_f32, 1.5f32);
+    assert_eq!(config.legacy_int, 8080i64);
+    assert_eq!(config.legacy_float, 90.8f64);
+    assert_eq!(config.isized, -4isize);
+    assert_eq!(config.usized, 4usize);
+    assert_eq!(config.vec_i32, vec![1i32, -2, 3]);
+    assert_eq!(config.vec_u64, vec![1u64, 2, 3]);
+    assert_eq!(config.vec_f32, vec![1.5f32, 2.5]);
+}
+#[test]
+#[serial]
 fn test_url_not_provided() {
     #[config("config_not_provided.toml")]
     struct MyConfig;

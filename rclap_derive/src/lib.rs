@@ -113,7 +113,9 @@ fn generate_single_struct(
                 GenericSpec::VecSpec(f) => {
                     if let Some(default) = &f.default {
                         let default = default.as_array().unwrap();
-                        if field.field_type == "Vec<String>" || field.field_type == PATH_BUF {
+                        if field.field_type == "Vec<String>"
+                            || field.field_type == format!("Vec<{}>", PATH_BUF)
+                        {
                             let default_strings: Vec<String> = default
                                 .iter()
                                 .map(|v| v.as_str().unwrap().to_string())
@@ -133,17 +135,48 @@ fn generate_single_struct(
                             });
                             arg_params
                                 .push(quote! { default_values_t = vec![#(#default_tokens),*] });
-                        } else if field.field_type == "Vec<i64>" {
-                            let defaults: Vec<i64> =
-                                default.iter().map(|v| v.as_integer().unwrap()).collect();
+                        } else if matches!(
+                            field.field_type.as_str(),
+                            "Vec<i8>" | "Vec<i16>" | "Vec<i32>" | "Vec<i64>" | "Vec<isize>"
+                        ) {
+                            let defaults: Vec<i64> = default
+                                .iter()
+                                .map(|v| {
+                                    v.as_integer().unwrap_or_else(|| {
+                                        panic!("Invalid integer default for {}", field.field_type)
+                                    })
+                                })
+                                .collect();
+                            let (min, max) = match field.field_type.as_str() {
+                                "Vec<i8>" => (i8::MIN as i64, i8::MAX as i64),
+                                "Vec<i16>" => (i16::MIN as i64, i16::MAX as i64),
+                                "Vec<i32>" => (i32::MIN as i64, i32::MAX as i64),
+                                _ => (i64::MIN, i64::MAX),
+                            };
+                            for v in &defaults {
+                                if *v < min || *v > max {
+                                    panic!(
+                                        "Default value {} out of range for {}",
+                                        v, field.field_type
+                                    );
+                                }
+                            }
                             let default_tokens = defaults.iter().map(|s| {
                                 let lit = Literal::i64_unsuffixed(*s);
                                 quote! { #lit }
                             });
                             arg_params.push(quote! { default_values_t = [#(#default_tokens),*] });
-                        } else if field.field_type == "Vec<f64>" {
-                            let defaults: Vec<f64> =
-                                default.iter().map(|v| v.as_float().unwrap()).collect();
+                        } else if matches!(field.field_type.as_str(), "Vec<f32>" | "Vec<f64>") {
+                            let defaults: Vec<f64> = default
+                                .iter()
+                                .map(|v| {
+                                    v.as_float().unwrap_or_else(|| {
+                                        v.as_integer().unwrap_or_else(|| {
+                                            panic!("Invalid float default for {}", field.field_type)
+                                        }) as f64
+                                    })
+                                })
+                                .collect();
                             let default_tokens = defaults.iter().map(|s| {
                                 let lit = Literal::f64_unsuffixed(*s);
                                 quote! { #lit }
@@ -156,13 +189,35 @@ fn generate_single_struct(
                                 quote! { #s }
                             });
                             arg_params.push(quote! { default_values_t = [#(#default_tokens),*] });
-                        } else if field.field_type == "Vec<usize>" {
-                            let defaults: Vec<usize> = default
+                        } else if matches!(
+                            field.field_type.as_str(),
+                            "Vec<u8>" | "Vec<u16>" | "Vec<u32>" | "Vec<u64>" | "Vec<usize>"
+                        ) {
+                            let defaults: Vec<i64> = default
                                 .iter()
-                                .map(|v| v.as_integer().unwrap().try_into().unwrap())
+                                .map(|v| {
+                                    v.as_integer().unwrap_or_else(|| {
+                                        panic!("Invalid integer default for {}", field.field_type)
+                                    })
+                                })
                                 .collect();
+                            let max: i64 = match field.field_type.as_str() {
+                                "Vec<u8>" => u8::MAX as i64,
+                                "Vec<u16>" => u16::MAX as i64,
+                                "Vec<u32>" => u32::MAX as i64,
+                                _ => i64::MAX,
+                            };
+                            for v in &defaults {
+                                if *v < 0 || *v > max {
+                                    panic!(
+                                        "Default value {} out of range for {}",
+                                        v, field.field_type
+                                    );
+                                }
+                            }
                             let default_tokens = defaults.iter().map(|s| {
-                                quote! { #s }
+                                let lit = Literal::i64_unsuffixed(*s);
+                                quote! { #lit }
                             });
                             arg_params.push(quote! { default_values_t = [#(#default_tokens),*] });
                         } else {

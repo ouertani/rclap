@@ -1,0 +1,16 @@
+small_i32 = { type = "i32", default = "-12" }
+small_u32 = { type = "u32", default = "12" }
+big_i64 = { type = "i64", default = "-8000" }
+big_u64 = { type = "u64", default = "8000" }
+tiny_i8 = { type = "i8", default = "-8" }
+tiny_u8 = { type = "u8", default = "8" }
+mid_i16 = { type = "i16", default = "-16" }
+mid_u16 = { type = "u16", default = "16" }
+small_f32 = { type = "f32", default = "1.5" }
+legacy_int = { type = "int", default = "8080" }
+legacy_float = { type = "float", default = "90.80" }
+isized = { type = "isize", default = "-4" }
+usized = { type = "usize", default = "4" }
+vec_i32 = { type = "[i32]", default = [1, -2, 3] }
+vec_u64 = { type = "[u64]", default = [1, 2, 3] }
+vec_f32 = { type = "[f32]", default = [1.5, 2.5] }

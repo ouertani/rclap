@@ -180,7 +180,7 @@ pub struct MyConfig {
 
 | Setting   | Description    |
 |-----------|----------------|
-| **type**  | Data type: `int`, `float`, `bool`, `string`, `path`, `[T]` for arrays (e.g., `[int]`, `[char]`) |
+| **type**  | Data type: `int` (=`i64`), `float` (=`f64`), `bool`, `string`, `path`, `char`, `i8`, `i16`, `i32`, `i64`, `u8`, `u16`, `u32`, `u64`, `usize`, `isize`, `f32`, `f64`, `[T]` for arrays (e.g., `[int]`, `[i32]`, `[char]`) |
 | **env**   | Environment variable name for runtime override |
 | **default** | Default value if neither env nor command line argument is set |
 | **doc**   | Documentation string displayed in help messages |
