@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.1](https://github.com/ouertani/rclap/compare/rclap-v1.3.0...rclap-v1.3.1) - 2026-10-16
+
+### Other
+
+- bump to 1.3.1 for patch release ([#35](https://github.com/ouertani/rclap/pull/35))
+
 ## [1.3.0](https://github.com/ouertani/rclap/compare/rclap-v1.2.2...rclap-v1.3.0) - 2026-10-16
 
 ### Added
