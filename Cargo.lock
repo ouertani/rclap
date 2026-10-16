@@ -310,7 +310,7 @@ checksum = "f8dcc9c7d52a811697d2151c701e0d08956f92b0e24136cf4cf27b57a6a0d9bf"
 
 [[package]]
 name = "rclap"
-version = "1.2.2"
+version = "1.3.0"
 dependencies = [
  "rclap_derive",
  "secrecy",
@@ -319,7 +319,7 @@ dependencies = [
 
 [[package]]
 name = "rclap_core"
-version = "1.2.2"
+version = "1.3.0"
 dependencies = [
  "serde",
  "tempfile",
@@ -328,7 +328,7 @@ dependencies = [
 
 [[package]]
 name = "rclap_derive"
-version = "1.2.2"
+version = "1.3.0"
 dependencies = [
  "clap",
  "proc-macro2",
